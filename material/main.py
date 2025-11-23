@@ -31,7 +31,7 @@ async def create_new_material(input : MaterialCreateInput):
 
 @app.put('/materials/{material_id}')
 async def update_material(material_id : int, input : MaterialUpdateInput):
-    result = MaterialRepo.update_material(material_id, input.json)
+    result = MaterialRepo.update_material(material_id, input.title, input.json)
     if not result:
         raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,

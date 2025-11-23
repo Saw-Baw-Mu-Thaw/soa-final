@@ -3,6 +3,7 @@ from ..models.Material import Material
 from ..models.Course import Course
 from ..models.Teacher import Teacher
 from ..models.Major import Major
+from ..models.OutputModels import AllMaterialOutput
 from ..config import DATABASE_STRING
 import os
 
@@ -21,7 +22,11 @@ def get_materials_in_course(course_id):
 
     session.close()
 
-    return materials
+    mylist = []
+    for mat in materials:
+        mylist.append(AllMaterialOutput(courseId=mat.courseId, materialId=mat.materialId, title=mat.title))
+
+    return mylist
 
 def get_specific_material(material_id : int):
     session = get_session()
@@ -60,7 +65,7 @@ def create_new_material(courseId : int, title : str, json : str):
 
     return material
 
-def update_material(material_id : int , json : str):
+def update_material(material_id : int , title : str | None, json : str):
     session = get_session()
 
     statement = select(Material).where(Material.materialId == material_id)
@@ -70,6 +75,11 @@ def update_material(material_id : int , json : str):
     if not material:
         return False
     
+    if title:
+        material.title = title
+        session.add(material)
+        session.commit()
+        
     file = open(material.path, 'w')
     file.write(json)
     file.close()
