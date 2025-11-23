@@ -4,3 +4,6 @@
 /course/__pycache__
 /course/models/__pycache__
 /course/repositories/__pycache__
+/material/__pycache__
+/material/models/__pycache__
+/material/repositories/__pycache__

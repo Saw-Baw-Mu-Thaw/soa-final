@@ -55,7 +55,7 @@ async def delete_enrollment(course_id : int, student_id : int):
     result = CourseRepo.unenroll_student(student_id, course_id)
     if not result:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail='Invalid input'
         )
     return
