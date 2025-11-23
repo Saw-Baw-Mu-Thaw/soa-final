@@ -5,3 +5,8 @@ class MaterialOutput(BaseModel):
     courseId : int
     title : str
     json : str
+
+class AllMaterialOutput(BaseModel):
+    materialId : int 
+    courseId : int
+    title : str    

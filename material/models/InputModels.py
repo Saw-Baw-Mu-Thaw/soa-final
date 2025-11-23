@@ -6,4 +6,5 @@ class MaterialCreateInput(BaseModel):
     json : str
 
 class MaterialUpdateInput(BaseModel):
+    title : str | None = None
     json : str

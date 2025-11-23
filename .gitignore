@@ -7,3 +7,7 @@
 /material/__pycache__
 /material/models/__pycache__
 /material/repositories/__pycache__
+/gateway/__pycache__
+/gateway/models/__pycache__
+/gateway/routers/__pycache__
+/material/courses
