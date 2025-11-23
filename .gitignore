@@ -1,3 +1,6 @@
 /auth/__pycache__
 /auth/models/__pycache__
 /auth/repositories/__pycache__
+/course/__pycache__
+/course/models/__pycache__
+/course/repositories/__pycache__
