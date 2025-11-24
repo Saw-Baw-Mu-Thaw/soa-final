@@ -30,6 +30,7 @@ async def is_student(token : Annotated[str, Depends(student_scheme)]):
             )
     except JWTError:
         raise credentials_exception
+    return True
     
 async def is_teacher(token : Annotated[str, Depends(teacher_scheme)]):
     credentials_exception = HTTPException(
@@ -52,6 +53,7 @@ async def is_teacher(token : Annotated[str, Depends(teacher_scheme)]):
             )
     except JWTError:
         raise credentials_exception
+    return True
     
 async def verify_token(student_token : Annotated[str, Depends(student_scheme)],
                                  teacher_token : Annotated[str, Depends(teacher_scheme)],
@@ -90,6 +92,7 @@ async def is_head(token : Annotated[str, Depends(head_scheme)]):
             )
     except JWTError:
         raise credentials_exception
+    return True
     
 async def get_student_id(token : Annotated[str, Depends(student_scheme)]):
     try:
@@ -123,3 +126,16 @@ async def get_head_id(token : Annotated[str, Depends(head_scheme)]):
             detail='Could not decode jwt'
         )
     return id
+
+async def get_role(token : Annotated[str, Depends(student_scheme)]):
+    
+    if token:
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            role : int = payload.get("role")
+        except JWTError:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail='Could not decode jwt'
+            )
+        return role
