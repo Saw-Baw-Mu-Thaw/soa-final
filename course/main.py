@@ -59,3 +59,13 @@ async def delete_enrollment(course_id : int, student_id : int):
             detail='Invalid input'
         )
     return
+
+@app.get('/course/teachers/{head_id}')
+async def get_teachers_in_faculty(head_id : int):
+    results = CourseRepo.get_teachers_in_faculty(head_id)
+    return results
+
+@app.get('/faculty/students/{head_id}')
+async def get_students_in_faculty(head_id : int):
+    results = CourseRepo.get_students_in_faculty(head_id)
+    return results

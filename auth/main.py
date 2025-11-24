@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Path
 from typing import Annotated
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
@@ -90,3 +90,18 @@ async def login_head(form_data : Annotated[OAuth2PasswordRequestForm, Depends()]
                                        , expires_delta=access_token_expire)
     
     return {'access_token' : access_token, "token_type" : 'bearer'}
+
+@app.get('/student/{id}')
+async def get_student(id : int):
+    result = StudentRepo.get_student_info(id)
+    return result
+
+@app.get('/teacher/{id}')
+async def get_teacher(id : int):
+    result = TeacherRepo.get_teacher_info(id)
+    return result
+
+@app.get('/head/{id}')
+async def get_head(id : int):
+    result = HeadRepo.get_head_info(id)
+    return result

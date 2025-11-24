@@ -6,7 +6,7 @@ from ..models.Enrollment import Enrollment
 from ..models.Head import Head
 from ..models.Faculty import Faculty
 from ..models.Major import Major
-from ..models.OutputModels import CourseStudentOutput
+from ..models.OutputModels import CourseStudentOutput, CourseOutput, CourseHeadOutput, TeacherOutput, StudentOutput
 from ..models.Teacher import Teacher
 
 engine = create_engine(DATABASE_STRING)
@@ -18,13 +18,17 @@ def get_session():
 def get_courses_for_student(student_id : int):
     session = get_session()
 
-    statement = select(Course).where(Enrollment.studentId == student_id).where(Enrollment.courseId == Course.courseId)
+    statement = select(Course, Teacher).where(Enrollment.studentId == student_id).where(Enrollment.courseId == Course.courseId).where(Course.teacherId == Teacher.teacherId)
     results = session.exec(statement)
     courses = results.all()
 
     session.close()
 
-    return courses
+    mylist = []
+    for course, teacher in courses:
+        mylist.append(CourseOutput(courseId=course.courseId, name=course.name, teacherName=teacher.name))
+
+    return mylist
 
 def get_students_in_course(course_id : int):
     session = get_session()
@@ -93,13 +97,17 @@ def get_courses_for_head(head_id):
     session = get_session()
 
     # statement = select(Course).join(Head).join(Faculty).join(Major).join(Course).where(Head.id == head_id)
-    statement = select(Course).where(Head.id == head_id).where(Head.facultyId == Faculty.facultyId).where(Major.facultyId == Faculty.facultyId).where(Major.majorId == Course.majorId)
+    statement = select(Course, Teacher, Major).where(Head.id == head_id).where(Head.facultyId == Faculty.facultyId).where(Major.facultyId == Faculty.facultyId).where(Major.majorId == Course.majorId).where(Teacher.teacherId == Course.teacherId)
     results = session.exec(statement)
     courses = results.all()
 
+    mylist = []
+    for course, teacher, major in courses:
+        mylist.append(CourseHeadOutput(courseId=course.courseId, name=course.name, teacherName=teacher.name, major=major.name))
+
     session.close()
 
-    return courses
+    return mylist
 
 def enroll_student(studentId : int, courseId : int):
     session = get_session()
@@ -128,3 +136,29 @@ def unenroll_student(studentId : int, courseId : int):
     session.close()
 
     return True
+
+def get_teachers_in_faculty(head_id : int):
+    session = get_session()
+
+    statement = select(Teacher).where(Head.id == head_id).where(Head.facultyId == Teacher.facultyId)
+    results = session.exec(statement)
+    teachers = results.all()
+
+    mylist = []
+    for t in teachers:
+        mylist.append(TeacherOutput(teacherId=t.teacherId, name=t.name, email=t.email))
+    
+    return mylist
+
+def get_students_in_faculty(head_id : int):
+    session = get_session()
+    
+    statement = select(Student).where(Head.id == head_id).where(Head.facultyId == Major.facultyId).where(Student.majorId == Major.majorId)
+    results = session.exec(statement)
+    students = results.all()
+
+    mylist = []
+    for s in students:
+        mylist.append(StudentOutput(studentId=s.studentId, name=s.name, email=s.email))
+
+    return mylist
