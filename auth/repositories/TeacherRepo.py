@@ -29,6 +29,8 @@ def get_teacher_info(id):
     result = session.exec(statement)
     joined_object = result.first()
 
+    session.close()
+
     if joined_object is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Teacher doesn't exist")    
     teacher = joined_object[0]
