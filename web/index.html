@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | University LMS</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/error.css">
+</head>
+
+<body class="login-body">
+
+    <div class="login-box">
+        <div class="login-header">
+            <h2>University LMS</h2>
+            <p>Academic Portal</p>
+        </div>
+
+        <div class="login-tabs">
+            <button class="tab-btn active" onclick="switchLoginTab('student')">Student</button>
+            <button class="tab-btn" onclick="switchLoginTab('teacher')">Teacher</button>
+            <button class="tab-btn" onclick="switchLoginTab('faculty')">Faculty Head</button>
+        </div>
+
+        <div class="login-form">
+            <h3 id="login-role-title">Student Login</h3>
+            <input type="email" id="email" placeholder="Email (e.g., thawthibaw@gmail.com)">
+            <input type="password" id="password" placeholder="Password">
+            <div style="margin-bottom: 15px;">
+                <small id="errorText">Incorrect Username or Password</small>
+            </div>            
+            <button class="btn-primary" onclick="handleLogin()">Log In</button>
+        </div>
+    </div>
+
+    <script src="js/login.js"></script>
+</body>
+
+</html>
