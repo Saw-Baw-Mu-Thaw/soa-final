@@ -3,7 +3,6 @@ from typing import Annotated
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from pwdlib import PasswordHash
-from pwdlib.hashers.bcrypt import BcryptHasher
 from pydantic import BaseModel
 from .config import SECRET_KEY, ALGORITHM
 from .repositories import StudentRepo, TeacherRepo, HeadRepo
