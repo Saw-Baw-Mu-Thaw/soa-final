@@ -79,6 +79,7 @@ def update_material(material_id : int , title : str | None, json : str):
         material.title = title
         session.add(material)
         session.commit()
+        session.close()
         
     file = open(material.path, 'w')
     file.write(json)
@@ -98,5 +99,6 @@ def delete_material(material_id : int):
 
     session.delete(material)
     session.commit()
+    session.close()
 
     return True

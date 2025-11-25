@@ -29,6 +29,8 @@ def get_student_info(id : int):
     result = session.exec(statement)
     joined_obj = result.first()
 
+    session.close()
+
     if joined_obj is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student doesn't exist")
     student, major = joined_obj

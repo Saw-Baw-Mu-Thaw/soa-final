@@ -168,7 +168,7 @@ async function loadFacultyCourses() {
     let html = `
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <h2>All Active Courses</h2>
-            <button class="btn-secondary" onclick="alert('Create Modal')">+ Add New Course</button>
+            <button class="btn-secondary" onclick="createCourse()">+ Add New Course</button>
         </div>
         <table>
             <thead><tr><th>ID</th><th>Course Name</th><th>Instructor</th><th>Major</th><th>Actions</th></tr></thead>
@@ -202,8 +202,7 @@ async function loadFacultyCourses() {
                 <td>${c['teacherName'] ? c['teacherName'] : '<span style="color:red">Unassigned</span>'}</td>
                 <td>${c['major']}</td>
                 <td>
-                    <button class="btn-primary" style="padding:5px 10px; font-size:0.8rem">Edit</button>
-                    <button class="btn-secondary" style="padding:5px 10px; font-size:0.8rem">Delete</button>
+                    <button class="btn-primary" style="padding:5px 10px; font-size:0.8rem" onclick="editCourse(${c['courseId']})">Edit</button>
                 </td>
             </tr>
         `;

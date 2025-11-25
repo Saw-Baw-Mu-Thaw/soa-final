@@ -70,3 +70,9 @@ async def get_students_in_faculty(head_id : Annotated[int, Depends(get_head_id)]
     url = COURSE_URL + '/faculty/students/' + str(head_id)
     response = requests.get(url=url)
     return response.json()
+
+@router.get('/faculty/majors', dependencies=[Depends(is_head)])
+async def get_majors_in_faculty(head_id : Annotated[int, Depends(get_head_id)]):
+    url = COURSE_URL + '/faculty/majors/' + str(head_id)
+    response = requests.get(url=url)
+    return response.json()
