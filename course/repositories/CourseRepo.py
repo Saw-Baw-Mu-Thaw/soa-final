@@ -1,4 +1,5 @@
 from sqlmodel import create_engine, select, Session
+from fastapi import HTTPException, status
 from ..config import DATABASE_STRING
 from ..models.Course import Course
 from ..models.Student import Student
@@ -33,18 +34,20 @@ def get_courses_for_student(student_id : int):
 def get_students_in_course(course_id : int):
     session = get_session()
 
-    statement = select(Student).where(Enrollment.courseId == course_id).where(Enrollment.studentId == Student.studentId)
+    statement = select(Student, Enrollment).where(Enrollment.courseId == course_id).where(Enrollment.studentId == Student.studentId)
     results = session.exec(statement)
     students = results.all()
 
     session.close()
 
     mylist = []
-    for std in students:
+    for std, enroll in students:
         mylist.append(CourseStudentOutput(studentId=std.studentId,
                                           email=std.email,
                                            majorId=std.majorId,
-                                            name=std.name ))
+                                            name=std.name,
+                                             courseId=enroll.courseId,
+                                              enrollmentId=enroll.enrollmentId ))
 
     return mylist
 
@@ -96,14 +99,16 @@ def modify_course(courseId : int, name : str | None, majorId : int | None, teach
 def get_courses_for_head(head_id):
     session = get_session()
 
-    # statement = select(Course).join(Head).join(Faculty).join(Major).join(Course).where(Head.id == head_id)
     statement = select(Course, Teacher, Major).where(Head.id == head_id).where(Head.facultyId == Faculty.facultyId).where(Major.facultyId == Faculty.facultyId).where(Major.majorId == Course.majorId).where(Teacher.teacherId == Course.teacherId)
     results = session.exec(statement)
     courses = results.all()
 
     mylist = []
     for course, teacher, major in courses:
-        mylist.append(CourseHeadOutput(courseId=course.courseId, name=course.name, teacherName=teacher.name, major=major.name))
+        mylist.append(CourseHeadOutput(courseId=course.courseId,
+                                        name=course.name, teacherName=teacher.name,
+                                          major=major.name, teacherId=teacher.teacherId,
+                                          majorId=major.majorId))
 
     session.close()
 
@@ -144,6 +149,8 @@ def get_teachers_in_faculty(head_id : int):
     results = session.exec(statement)
     teachers = results.all()
 
+    session.close()
+
     mylist = []
     for t in teachers:
         mylist.append(TeacherOutput(teacherId=t.teacherId, name=t.name, email=t.email))
@@ -157,8 +164,32 @@ def get_students_in_faculty(head_id : int):
     results = session.exec(statement)
     students = results.all()
 
+    session.close()
+
     mylist = []
     for s in students:
         mylist.append(StudentOutput(studentId=s.studentId, name=s.name, email=s.email))
 
     return mylist
+
+def get_majors_in_faculty(head_id : int):
+    session = get_session()
+
+    statement = select(Head).where(Head.id == head_id)
+    result = session.exec(statement)
+    head = result.first()
+
+    if not head:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Faculty head doesn't exist"
+        )
+    
+    statement = select(Major).where(Major.facultyId == head.facultyId)
+    results = session.exec(statement)
+    majors = results.all()
+
+    session.close()
+
+    return majors
+

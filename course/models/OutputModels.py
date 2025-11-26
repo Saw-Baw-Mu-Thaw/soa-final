@@ -5,6 +5,8 @@ class CourseStudentOutput(BaseModel):
     name : str
     email : str
     majorId : int
+    enrollmentId : int
+    courseId : int
 
 class CourseOutput(BaseModel):
     courseId : int
@@ -16,6 +18,8 @@ class CourseHeadOutput(BaseModel):
     name : str
     teacherName : str
     major : str
+    teacherId : int
+    majorId : int
 
 class TeacherOutput(BaseModel):
     teacherId : int

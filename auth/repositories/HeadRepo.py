@@ -18,6 +18,8 @@ def get_head(email : str):
     results = session.exec(statement)
     head = results.first()
 
+    session.close()
+
     return head
 
 def get_head_info(id : int):
@@ -26,6 +28,8 @@ def get_head_info(id : int):
     statement = select(Head, Faculty).where(Head.id == id).where(Head.facultyId == Faculty.facultyId)
     result = session.exec(statement)
     joined_obj = result.first()
+
+    session.close()
 
     if joined_obj is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail='Faculty Head doesn\'t exist')

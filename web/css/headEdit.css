@@ -1,0 +1,54 @@
+/* --- Styles for the Enrollment Section (#enrollment-table) --- */
+#enrollment-table {
+    padding: 30px;
+    background-color: #f7f7f7; /* Light background for the whole section */
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-top: 30px;
+}
+
+/* --- Styles for the Enrollment Form (#enrollment-form) --- */
+#enrollment-form {
+    display: flex;
+    flex-wrap: wrap; /* Allows items to wrap on smaller screens */
+    align-items: flex-end; /* Aligns items to the bottom line (makes inputs/buttons align) */
+    gap: 15px; /* Space between form elements */
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+#enrollment-form h3 {
+    width: 100%; /* Forces the header to take a full line */
+    margin-bottom: 8px;
+    color: #333333;
+    font-size: 1.2em;
+}
+
+#enrollment-form input[type="search"],
+#enrollment-form select {
+    padding: 10px 15px;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    font-size: 1em;
+    flex-grow: 1; /* Allows inputs/selects to take up available space */
+    min-width: 150px; /* Ensures they don't get too narrow */
+    box-sizing: border-box;
+}
+
+#enrollment-form #enrollBtn {
+    background-color: #007bff; /* Primary blue color for action button */
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+#enrollment-form #enrollBtn:hover {
+    background-color: #0056b3;
+}
+
