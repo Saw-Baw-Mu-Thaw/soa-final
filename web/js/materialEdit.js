@@ -63,8 +63,10 @@ function initializeSaveAndLeaveBtn() {
         let editorData = null
 
         try {
-            editorData = await editor.save()
-            json = JSON.stringify(editorData)
+            await editor.save().then((outputData) => {
+                json = JSON.stringify(outputData)
+                editorData = outputData
+            })
         } catch (error) {
             console.error('Error saving editor data:', error)
             alert('Error saving editor content. Please try again.')

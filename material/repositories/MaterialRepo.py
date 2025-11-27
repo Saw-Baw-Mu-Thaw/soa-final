@@ -1,4 +1,6 @@
 from sqlmodel import Session, create_engine, select
+from sqlalchemy.exc import SQLAlchemyError
+from fastapi import HTTPException, status
 from ..models.Material import Material
 from ..models.Course import Course
 from ..models.Teacher import Teacher
@@ -43,9 +45,16 @@ def create_new_material(courseId : int, title : str, json : str):
     session = get_session()
 
     material = Material(courseId=courseId, title=title)
-    session.add(material)
-    session.commit()
-    session.refresh(material)
+    try:
+        session.add(material)
+        session.commit()
+        session.refresh(material)
+    except SQLAlchemyError:
+        session.close()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Please check your input'
+        )
 
     dir = os.path.dirname(__file__)
     path = os.path.join(dir, '..', 'courses', 'course-' + str(courseId), 'material-' + str(material.materialId) + '.json')
@@ -79,11 +88,12 @@ def update_material(material_id : int , title : str | None, json : str):
         material.title = title
         session.add(material)
         session.commit()
-        session.close()
         
     file = open(material.path, 'w')
     file.write(json)
     file.close()
+
+    session.close()
 
     return True
 

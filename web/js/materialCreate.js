@@ -112,13 +112,15 @@ async function ready() {
 async function inputValid() {
     let title = document.getElementById('title').value.trim();
     let json = ""
+    let editorData = null;
     await editor.save().then((outputData) => {
         json = JSON.stringify(outputData)
+        editorData = outputData
     })
 
     if(title.length == 0) {
         return false
-    } else if(json.length == 0) {
+    } else if(editorData == null || editorData.blocks == null || editorData.blocks.length == 0) {
         return false
     }
 
