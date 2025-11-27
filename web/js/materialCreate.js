@@ -77,7 +77,12 @@ async function ready() {
                 }
             }).then(async (response) => {
                 if(response.ok) {
-                    window.location.replace('../teacher.html');
+                    // after creating material, go back to the course dashboard
+                    let redirectUrl = '../course.html'
+                    if (courseId) {
+                        redirectUrl += '?courseId=' + courseId
+                    }
+                    window.location.replace(redirectUrl);
                     return;
                 }
             })
@@ -107,13 +112,15 @@ async function ready() {
 async function inputValid() {
     let title = document.getElementById('title').value.trim();
     let json = ""
+    let editorData = null;
     await editor.save().then((outputData) => {
         json = JSON.stringify(outputData)
+        editorData = outputData
     })
 
     if(title.length == 0) {
         return false
-    } else if(json.length == 0) {
+    } else if(editorData == null || editorData.blocks == null || editorData.blocks.length == 0) {
         return false
     }
 
@@ -124,7 +131,11 @@ function initializeDashboardBtn() {
     let dashboardBtn = document.getElementById('dashboard-link')
 
     dashboardBtn.addEventListener('click', () => {
-            window.location.replace('../teacher.html')
+            let url = '../course.html'
+            if (courseId) {
+                url += '?courseId=' + courseId
+            }
+            window.location.replace(url)
             return
         }
     );

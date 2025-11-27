@@ -5,6 +5,7 @@ let token = null
 let currentRole = null
 let editor = null
 let materialId = null
+let courseId = null
 
 async function ready() {
     let materialAction = document.getElementById('material-action')
@@ -44,7 +45,12 @@ function initializeSaveWithoutLeavingBtn() {
     let saveWithoutLeavingBtn = document.getElementById('saveWithoutLeavingBtn')
 
     saveWithoutLeavingBtn.addEventListener('click', () => {
-        window.location.replace('../teacher.html')
+        // leave editor without saving and go back to the course dashboard
+        let url = '../course.html'
+        if (courseId) {
+            url += '?courseId=' + courseId
+        }
+        window.location.replace(url)
         return
     })
 }
@@ -54,16 +60,26 @@ function initializeSaveAndLeaveBtn() {
     saveAndLeaveBtn.addEventListener('click', async () => {
         let title = document.getElementById('title').value.trim()
         let json = ""
+        let editorData = null
 
-        await editor.save().then((outputData) => {
-            json = JSON.stringify(outputData)
-        })
+        try {
+            await editor.save().then((outputData) => {
+                json = JSON.stringify(outputData)
+                editorData = outputData
+            })
+        } catch (error) {
+            console.error('Error saving editor data:', error)
+            alert('Error saving editor content. Please try again.')
+            return
+        }
 
         if (title.length == 0) {
             alert('Title cannot be empty')
             return
         }
-        if (json.length == 0) {
+        
+        // Better validation for EditorJS content
+        if (!editorData || !editorData.blocks || editorData.blocks.length === 0) {
             alert('Content cannot be empty')
             return
         }
@@ -71,24 +87,41 @@ function initializeSaveAndLeaveBtn() {
         let url = GATEWAY + '/materials/' + materialId
         let body = { 'title': title, 'json': json }
 
-        await fetch(url, {
-            method: 'PUT',
-            body: JSON.stringify(body),
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        }).then((response) => {
+        console.log('Saving material (Save and Leave):', { materialId, title, jsonLength: json.length })
+
+        try {
+            const response = await fetch(url, {
+                method: 'PUT',
+                body: JSON.stringify(body),
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+
             if (response.ok) {
                 saved = true
                 let saveStatusText = document.getElementById('saveStatusText')
                 saveStatusText.textContent = 'Saved'
                 saveStatusText.style.color = '#00ff00'
 
-                window.location.reload('../teacher.html')
+                console.log('Material saved successfully, redirecting...')
+                // after save-and-leave, go back to the course dashboard
+                let redirectUrl = '../course.html'
+                if (courseId) {
+                    redirectUrl += '?courseId=' + courseId
+                }
+                window.location.replace(redirectUrl)
                 return
+            } else {
+                const errorData = await response.json().catch(() => ({}))
+                console.error('Save failed:', response.status, errorData)
+                alert(`Failed to save material: ${errorData.detail || 'Unknown error'}`)
             }
-        })
+        } catch (error) {
+            console.error('Network error:', error)
+            alert('Network error. Please check your connection and try again.')
+        }
     })
 }
 
@@ -98,16 +131,24 @@ function initializeSaveBtn() {
     saveBtn.addEventListener('click', async () => {
         let title = document.getElementById('title').value.trim()
         let json = ""
+        let editorData = null
 
-        await editor.save().then((outputData) => {
-            json = JSON.stringify(outputData)
-        })
+        try {
+            editorData = await editor.save()
+            json = JSON.stringify(editorData)
+        } catch (error) {
+            console.error('Error saving editor data:', error)
+            alert('Error saving editor content. Please try again.')
+            return
+        }
 
         if (title.length == 0) {
             alert('Title cannot be empty')
             return
         }
-        if (json.length == 0) {
+        
+        // Better validation for EditorJS content
+        if (!editorData || !editorData.blocks || editorData.blocks.length === 0) {
             alert('Content cannot be empty')
             return
         }
@@ -115,21 +156,33 @@ function initializeSaveBtn() {
         let url = GATEWAY + '/materials/' + materialId
         let body = { 'title': title, 'json': json }
 
-        await fetch(url, {
-            method: 'PUT',
-            body: JSON.stringify(body),
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        }).then((response) => {
+        console.log('Saving material (Save button):', { materialId, title, jsonLength: json.length })
+
+        try {
+            const response = await fetch(url, {
+                method: 'PUT',
+                body: JSON.stringify(body),
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+
             if (response.ok) {
                 saved = true
                 let saveStatusText = document.getElementById('saveStatusText')
                 saveStatusText.textContent = 'Saved'
                 saveStatusText.style.color = '#00ff00'
+                console.log('Material saved successfully')
+            } else {
+                const errorData = await response.json().catch(() => ({}))
+                console.error('Save failed:', response.status, errorData)
+                alert(`Failed to save material: ${errorData.detail || 'Unknown error'}`)
             }
-        })
+        } catch (error) {
+            console.error('Network error:', error)
+            alert('Network error. Please check your connection and try again.')
+        }
     })
 }
 
@@ -138,7 +191,11 @@ function initializeDashboardBtn() {
 
     dashboardBtn.addEventListener('click', () => {
         if (saved) {
-            window.location.replace('../teacher.html')
+            let url = '../course.html'
+            if (courseId) {
+                url += '?courseId=' + courseId
+            }
+            window.location.replace(url)
             return
         } else {
             var modal = document.getElementById('myModal')
@@ -157,26 +214,42 @@ async function initializeEditor(materialAction) {
     let data = null
     let title = null
 
-    let url = GATEWAY + '/materials/' + materialId
-    await fetch(url, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    }).then(async (response) => {
-        let json = await response.json()
+    try {
+        let url = GATEWAY + '/materials/' + materialId
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        })
 
         if (response.ok) {
+            let json = await response.json()
             data = json['json']
             title = json['title']
         } else {
-            console.log('Could not fetch material')
+            console.error('Could not fetch material:', response.status)
+            alert('Failed to load material. Please refresh the page.')
+            return
         }
-    })
+    } catch (error) {
+        console.error('Network error fetching material:', error)
+        alert('Network error loading material. Please check your connection.')
+        return
+    }
 
     let titleElem = document.getElementById('title')
-    titleElem.value = title
+    titleElem.value = title || ''
+
+    let parsedData = null
+    try {
+        parsedData = data ? JSON.parse(data) : { blocks: [] }
+    } catch (error) {
+        console.error('Error parsing material JSON:', error)
+        parsedData = { blocks: [] }
+        alert('Warning: Material content could not be loaded properly. Starting with empty content.')
+    }
 
     editor = new EditorJS({
         holder: 'editorjs',
@@ -197,7 +270,7 @@ async function initializeEditor(materialAction) {
         onReady: () => {
             materialAction.textContent = "Edit Material"
         },
-        data: JSON.parse(data),
+        data: parsedData,
         onChange: () => {
             saved = false
             let saveStatusText = document.getElementById('saveStatusText')
@@ -208,12 +281,13 @@ async function initializeEditor(materialAction) {
 }
 
 function getQueryParam() {
-    // get the material id from query string
+    // get the material id (and optional course id) from query string
     let url = new URL(window.location.href)
     let queryParam = new URLSearchParams(url.search)
 
     materialId = queryParam.get('materialId')
-    console.log('Material ID is ', materialId)
+    courseId = queryParam.get('courseId')
+    console.log('Material ID is ', materialId, 'Course ID is', courseId)
 }
 
 async function fetchUser() {

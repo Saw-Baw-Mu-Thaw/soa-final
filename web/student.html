@@ -37,11 +37,27 @@
         </div>
     </div>
 
-    <script src="js/dashboard.js"></script>
+    <script src="js/dashboard-common.js"></script>
+    <script src="js/dashboard-student.js"></script>
+    <script src="js/course-detail.js"></script>
+    <script src="js/materials.js"></script>
+    <script src="js/assignments.js"></script>
     <script>
         // On load, verify user is a student and render the default course view
         document.addEventListener('DOMContentLoaded', () => {
             initDashboard('student');
+
+            // if a courseId is provided in the URL (e.g. coming back from material page),
+            // open that course directly
+            const url = new URL(window.location.href);
+            const params = new URLSearchParams(url.search);
+            const courseId = params.get('courseId');
+            if (courseId) {
+                // slight delay to allow courses to load first
+                setTimeout(() => {
+                    viewCourseDetail(parseInt(courseId));
+                }, 200);
+            }
         });
     </script>
 </body>

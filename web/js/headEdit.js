@@ -375,4 +375,5 @@ function deleteRows() {
     for (let i = 0; i < enrollments.length; i++) {
         table.deleteRow(-1)
     }
+    
 }
