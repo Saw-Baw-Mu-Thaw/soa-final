@@ -4,6 +4,7 @@ let token = null
 let currentRole = null
 let editor = null
 let materialId = null
+let courseId = null
 
 async function ready() {
     let materialTitle = document.getElementById('material-title')
@@ -42,7 +43,11 @@ async function ready() {
 function initializeDashboardBtn() {
     let dashboardBtn = document.getElementById('dashboard-link')
     dashboardBtn.addEventListener('click', () => {
+        // go back to the student dashboard, ideally to the same course view
         let url = '../student.html'
+        if (courseId) {
+            url += '?courseId=' + courseId
+        }
         window.location.replace(url)
         return
     })
@@ -103,6 +108,7 @@ function getQueryParam() {
     let queryParams = new URLSearchParams(url.search)
 
     materialId = queryParams.get('materialId')
+    courseId = queryParams.get('courseId')
 }
 
 async function fetchUser() {

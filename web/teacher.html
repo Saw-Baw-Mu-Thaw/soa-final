@@ -27,24 +27,31 @@
         </nav>
 
         <div class="main-layout">
-            <aside class="sidebar">
-                <ul>
-                    <li class="active-link" onclick="loadTeacherCourses()">Teaching Courses</li>
-                    <li onclick="alert('Gradebook')">Gradebook</li>
-                    <li onclick="alert('Resources')">Material Repository</li>
-                </ul>
-            </aside>
-
             <section id="content-area" class="content-area">
                 <h2>Loading...</h2>
             </section>
         </div>
     </div>
 
-    <script src="js/dashboard.js"></script>
+    <script src="js/dashboard-common.js"></script>
+    <script src="js/dashboard-teacher.js"></script>
+    <script src="js/course-detail.js"></script>
+    <script src="js/materials.js"></script>
+    <script src="js/assignments.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             initDashboard('teacher');
+
+            // if a courseId is provided in the URL (e.g. coming back from material page),
+            // open that course directly
+            const url = new URL(window.location.href);
+            const params = new URLSearchParams(url.search);
+            const courseId = params.get('courseId');
+            if (courseId) {
+                setTimeout(() => {
+                    viewCourseDetail(parseInt(courseId));
+                }, 200);
+            }
         });
 
         // Close dropdowns if clicking outside
