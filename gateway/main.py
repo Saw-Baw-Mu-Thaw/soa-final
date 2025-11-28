@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import auth, course, material
+from .routers import auth, course, material,homework,notification
 
 app = FastAPI(title='API Gateway')
 
@@ -15,6 +15,8 @@ app.add_middleware(CORSMiddleware,
 app.include_router(auth.router)
 app.include_router(course.router)
 app.include_router(material.router)
+app.include_router(homework.router)
+app.include_router(notification.router)
 
 @app.get('/')
 async def get_root():

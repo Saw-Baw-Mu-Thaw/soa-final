@@ -70,6 +70,7 @@ def create_new_material(courseId : int, title : str, json : str):
     material.path = path
     session.add(material)
     session.commit()
+    session.refresh(material)
     session.close()
 
     return material
