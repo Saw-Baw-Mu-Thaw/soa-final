@@ -19,6 +19,8 @@ async function ready() {
     enrollmentTable.style.display = 'none'
     let tableLoading = document.getElementById('table-loading')
     tableLoading.style.display = 'none'
+    let spinner = document.getElementById('loadingSpinner')
+    spinner.style.display = 'none'
 
     if (!storedRole || !token || storedRole != 'faculty') {
         alert("Unauthorized access. Redirecting to login.");
@@ -93,6 +95,13 @@ async function fetchCourse() {
                 }
 
             }
+        }else{
+            showAlert("Could not fetch courses")
+        }
+    }).catch(() => {
+        if (!checkInternetConnection()) {
+            showAlert('Something went wrong')
+            return;
         }
     })
 }
@@ -155,7 +164,13 @@ async function fetchAllStudentsInFaculty() {
                 studentSelect[i] = option
             }
         } else {
-            console.log('Could not fetch students in faculty')
+            // console.log('Could not fetch students in faculty')
+            showAlert("Could not fetch students in faculty")
+        }
+    }).catch(() => {
+        if (!checkInternetConnection()) {
+            showAlert('Something went wrong')
+            return;
         }
     })
 }
@@ -183,7 +198,12 @@ async function fetchTeachers() {
             }
         }
         else {
-            console.log('Could not fetch teachers')
+            showAlert('Could not fetch teachers')
+        }
+    }).catch(() => {
+        if (!checkInternetConnection()) {
+            showAlert('Something went wrong')
+            return;
         }
     })
 }
@@ -209,7 +229,13 @@ async function fetchMajors() {
                 majorSelect[i] = option
             }
         } else {
-            console.log("Could not fetch majors in faculty")
+            // console.log("Could not fetch majors in faculty")
+            showAlert("Could not fetch majors in faculty")
+        }
+    }).catch(() => {
+        if (!checkInternetConnection()) {
+            showAlert('Something went wrong')
+            return;
         }
     })
     return url
@@ -248,7 +274,13 @@ async function fetchEnrollments() {
                 unenrollCell.innerHTML = `<button class='btn-secondary' onclick="unenrollStudent(${e['courseId']}, ${e['studentId']})">Unenroll</button>`;
             }
         } else {
-            console.log('Could not fetch enrolled students')
+            // console.log('Could not fetch enrolled students')
+            showAlert("Could not fetch enrolled students")
+        }
+    }).catch(() => {
+        if (!checkInternetConnection()) {
+            showAlert('Something went wrong')
+            return;
         }
     })
 }
@@ -267,7 +299,13 @@ async function fetchUser() {
             console.log('Current User Info\n' + json)
             currentUser = json
         } else {
-            console.log('Something went wrong')
+            showAlert('Couldn\'t fetch user')
+            return;
+        }
+    }).catch(() => {
+        if (!checkInternetConnection()) {
+            showAlert('Something went wrong')
+            return;
         }
     })
 }
@@ -284,11 +322,13 @@ async function saveCourseEdit() {
     let majorId = document.getElementById('major').value
 
     if (name.length == 0) {
-        alert('Course Name Cannot Be Empty')
+        showAlert('Course Name Cannot Be Empty')
         return;
     }
 
     let data = { 'name': name, 'teacherId': teacherId, 'majorId': majorId }
+
+    startLoading()
 
     await fetch(url, {
         method: 'PUT',
@@ -299,9 +339,20 @@ async function saveCourseEdit() {
         }
     }).then((response) => {
         if (response.ok) {
-            alert('Couse information has been updated') // replace with success popup
+            stopLoading("Save");
+            showSuccess("Course Information has been updated")
+            // alert('Couse information has been updated') // replace with success popup
         } else {
-            console.log('Could not update course information')
+            stopLoading("Save")
+            // console.log('Could not update course information')
+            showAlert("Could not update course information")
+        }
+    }).catch(() => {
+        stopLoading("Save");
+
+        if (!checkInternetConnection()) {
+            showAlert('Something went wrong')
+            return;
         }
     })
 }
@@ -376,4 +427,98 @@ function deleteRows() {
         table.deleteRow(-1)
     }
     
+}
+
+function showAlert(title, description = "Dialog will close in 3 seconds") {
+    let modal = document.getElementById('alertModal')
+    let span = document.getElementsByClassName('close-btn')[0]
+    let footerBtn = document.getElementById('closeModalFooterBtn')
+
+    let titleElem = document.getElementById('modalTitle')
+    let descriptionElem = document.getElementById('modalSubdescription')
+
+    titleElem.textContent = title
+    if (description.length != 0) {
+        descriptionElem.textContent = description
+    }
+
+    span.addEventListener('click', () => {
+        modal.style.display = 'none'
+    })
+
+    footerBtn.addEventListener('click', () => {
+        modal.style.display = 'none'
+    })
+
+    window.addEventListener('click', (event) => {
+        if (event.target == modal) {
+            modal.style.display = 'none'
+        }
+    })
+
+    modal.style.display = 'block';
+
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 3000)
+}
+
+function checkInternetConnection() {
+    if (!navigator.onLine) {
+        showAlert('Not Connected', 'Please check your connection')
+        return true;
+    }
+    return false;
+}
+
+function startLoading() {
+    // for loading
+    let button = document.getElementsByClassName('submitButton')[0]
+    let buttonText = document.getElementById('buttonText')
+    let spinner = document.getElementById('loadingSpinner')
+
+    button.disabled = true
+    buttonText.hidden = true
+    spinner.style.display = 'inline-block'
+}
+
+function stopLoading(btnText = "Log In") {
+    let button = document.getElementsByClassName('submitButton')[0]
+    let buttonText = document.getElementById('buttonText')
+    let spinner = document.getElementById('loadingSpinner')
+
+    button.disabled = false
+    buttonText.textContent = btnText
+    buttonText.hidden = false
+    spinner.style.display = 'none'
+}
+
+function showSuccess(title) {
+    let modal = document.getElementById('successModal')
+    let span = document.getElementsByClassName('close-btn')[1]
+    let footerBtn = document.getElementById('closeSuccessModalFooterBtn')
+
+    let titleElem = document.getElementById('successModalTitle')
+
+    titleElem.textContent = title
+
+    span.addEventListener('click', () => {
+        modal.style.display = 'none'
+    })
+
+    footerBtn.addEventListener('click', () => {
+        modal.style.display = 'none'
+    })
+
+    window.addEventListener('click', (event) => {
+        if (event.target == modal) {
+            modal.style.display = 'none'
+        }
+    })
+
+    modal.style.display = 'block';
+
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 3000)
 }

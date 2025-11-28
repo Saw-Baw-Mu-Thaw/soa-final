@@ -72,7 +72,12 @@ async function initializeEditor() {
             data = JSON.parse(json['json'])
             title = json['title']
         } else {
-            console.log('Could not fetch material data')
+            // console.log('Could not fetch material data')
+            showAlert("Server Error", "Could not fetch data")
+        }
+    }).catch(() => {
+        if(!checkInternetConnection()) {
+            showAlert("Something went wrong")
         }
     })
 
@@ -125,7 +130,13 @@ async function fetchUser() {
             console.log('Current User Info\n' + json)
             currentUser = json
         } else {
-            console.log('Something went wrong')
+            showAlert("Couldn't fetch user")
+            return;
+        }
+    }).catch(() => {
+        if(!checkInternetConnection()) {
+            showAlert('Something went wrong')
+            return;
         }
     })
 }
@@ -134,4 +145,46 @@ async function fetchUser() {
 function logout() {
     localStorage.clear();
     window.location.href = '../index.html';
+}
+
+function showAlert(title, description = "Dialog will close in 3 seconds") {
+    let modal = document.getElementById('alertModal')
+    let span = document.getElementsByClassName('close-btn')[0]
+    let footerBtn = document.getElementById('closeModalFooterBtn')
+
+    let titleElem = document.getElementById('modalTitle')
+    let descriptionElem = document.getElementById('modalSubdescription')
+
+    titleElem.textContent = title
+    if (description.length != 0) {
+        descriptionElem.textContent = description
+    }
+
+    span.addEventListener('click', () => {
+        modal.style.display = 'none'
+    })
+
+    footerBtn.addEventListener('click', () => {
+        modal.style.display = 'none'
+    })
+
+    window.addEventListener('click', (event) => {
+        if (event.target == modal) {
+            modal.style.display = 'none'
+        }
+    })
+
+    modal.style.display = 'block';
+
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 3000)
+}
+
+function checkInternetConnection() {
+    if (!navigator.onLine) {
+        showAlert('Not Connected', 'Please check your connection')
+        return true;
+    }
+    return false;
 }
