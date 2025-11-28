@@ -12,6 +12,23 @@ app  = FastAPI(title='Homework Service')
 
 NOTI_URL = os.getenv("NOTI_URL", "http://localhost:8005/")
 
+def send_homework_notification(title: str, homework_id: int):
+    """Helper function to send homework notification"""
+    try:
+        url = NOTI_URL + 'notifications/homework'
+        data = {
+            'title': title,
+            'homeworkId': homework_id
+        }
+        requests.post(
+            url=url,
+            data=json.dumps(data),
+            headers={'Content-Type': 'application/json'},
+            timeout=5 
+        )
+    except Exception as e:
+        print(f"Failed to send notification: {e}")
+        
 @app.get("/")
 async def get_root():
     return 'This is the Homework Service'
@@ -128,19 +145,3 @@ async def get_submissions(homework_id: int):
     submissions = HomeworkRepo.get_submissions_for_homework(homework_id)
     return submissions
 
-def send_homework_notification(title: str, homework_id: int):
-    """Helper function to send homework notification"""
-    try:
-        url = NOTI_URL + 'notifications/homework'
-        data = {
-            'title': title,
-            'homeworkId': homework_id
-        }
-        requests.post(
-            url=url,
-            data=json.dumps(data),
-            headers={'Content-Type': 'application/json'},
-            timeout=5 
-        )
-    except Exception as e:
-        print(f"Failed to send notification: {e}")

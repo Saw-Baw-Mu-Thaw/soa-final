@@ -4,6 +4,7 @@ from ..models.Submission import Submission
 from ..config import DATABASE_STRING
 from datetime import datetime
 import os
+from sqlalchemy import text
 
 engine = create_engine(DATABASE_STRING)
 
@@ -115,6 +116,11 @@ def update_homework(homework_id: int, courseId: int | None, deadline: datetime |
 
 def delete_homework(homework_id: int):
     session = get_session()
+
+    session.exec(
+        text("DELETE FROM tbl_hw_notifications WHERE homeworkId = :id").params(id=homework_id)
+    )
+    
     statement = select(Homework).where(Homework.homeworkId == homework_id)
     result = session.exec(statement)
     homework = result.first()
