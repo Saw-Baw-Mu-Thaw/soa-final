@@ -29,8 +29,8 @@ async def create_new_material(input : CreateMaterialInput):
     return response.json()
 
 @router.put('/{material_id}', dependencies=[Depends(is_teacher)])
-async def update_material(material_id : Annotated[int, Path(gt=0)], input : UpdateMaterialInput):
-    url = MATERIAL_URL + '/materials/' + str(material_id)
+async def update_material(material_id : Annotated[int, Path(gt=0)], input : UpdateMaterialInput,send_notification: bool = Query(False, description="Send notification to students")):
+    url = MATERIAL_URL + f'/materials/{material_id}?send_notification={send_notification}'
     data = {'title' : input.title, 'json' : input.json}
     response = requests.put(url=url, data=json.dumps(data))
     return response.json()
