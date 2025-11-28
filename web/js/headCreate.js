@@ -60,7 +60,12 @@ async function fetchTeachers() {
             }
         }
         else {
-            console.log('Could not fetch teachers')
+            showAlert('Could not fetch teachers')
+        }
+    }).catch(() => {
+        if (!checkInternetConnection()) {
+            showAlert('Something went wrong')
+            return;
         }
     })
 }
@@ -86,7 +91,13 @@ async function fetchMajors() {
                 majorSelect[i] = option
             }
         } else {
-            console.log("Could not fetch majors in faculty")
+            // console.log("Could not fetch majors in faculty")
+            showAlert("Could not fetch majors in faculty")
+        }
+    }).catch(() => {
+        if (!checkInternetConnection()) {
+            showAlert('Something went wrong')
+            return;
         }
     })
     return url
@@ -106,7 +117,13 @@ async function fetchUser() {
             console.log('Current User Info\n' + json)
             currentUser = json
         } else {
-            console.log('Something went wrong')
+            showAlert('Couldn\'t fetch user')
+            return;
+        }
+    }).catch(() => {
+        if (!checkInternetConnection()) {
+            showAlert('Something went wrong')
+            return;
         }
     })
 }
@@ -124,17 +141,17 @@ async function createCourse() {
     console.log('name' , name, '\nteacher', teacherId, '\nmajor', majorId)
 
     if(name.length == 0) {
-        alert('Name cannot be empty')
+        showAlert("Name cannot be empty")
         return
     }
 
     if(teacherId == null) {
-        alert('Teacher is not selected')
+        showAlert("Teacher is not selected")
         return
     }
 
     if(majorId == null) {
-        alert('Major is not selected')
+        showAlert('Major is not selected')
         return
     }
 
@@ -153,7 +170,54 @@ async function createCourse() {
             window.location.replace(url)
             return;
         }else{
-            console.log('Could not create course')
+            showAlert("Could not create course")
+        }
+    }).catch(() => {
+        if (!checkInternetConnection()) {
+            showAlert('Something went wrong')
+            return;
         }
     })
+}
+
+function showAlert(title, description = "Dialog will close in 3 seconds") {
+    let modal = document.getElementById('alertModal')
+    let span = document.getElementsByClassName('close-btn')[0]
+    let footerBtn = document.getElementById('closeModalFooterBtn')
+
+    let titleElem = document.getElementById('modalTitle')
+    let descriptionElem = document.getElementById('modalSubdescription')
+
+    titleElem.textContent = title
+    if (description.length != 0) {
+        descriptionElem.textContent = description
+    }
+
+    span.addEventListener('click', () => {
+        modal.style.display = 'none'
+    })
+
+    footerBtn.addEventListener('click', () => {
+        modal.style.display = 'none'
+    })
+
+    window.addEventListener('click', (event) => {
+        if (event.target == modal) {
+            modal.style.display = 'none'
+        }
+    })
+
+    modal.style.display = 'block';
+
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 3000)
+}
+
+function checkInternetConnection() {
+    if (!navigator.onLine) {
+        showAlert('Not Connected', 'Please check your connection')
+        return true;
+    }
+    return false;
 }
