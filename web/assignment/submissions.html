@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>View Submissions | University LMS</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+
+    <div class="dashboard-wrapper">
+        <nav class="top-nav">
+            <div class="nav-brand">University LMS</div>
+
+            <div class="nav-controls">
+                <div class="dashboard-nav">
+                    <button id="dashboard-link">Dashboard</button>
+                </div>
+
+                <div class="profile-wrapper" onclick="window.location.href='../profile.html'" style="cursor: pointer;">
+                    <span id="user-name">Teacher Name</span>
+                    <i class="fas fa-user-tie fa-lg"></i>
+                </div>
+
+                <button class="btn-logout" onclick="logout()" style="margin-left: 15px;">Logout</button>
+            </div>
+        </nav>
+
+        <div class="main-layout">
+            <section id="content-area" class="content-area">
+                <h2 id="assignment-title">Loading Assignment...</h2>
+                
+                <div id="assignment-info" style="display: none; margin-bottom: 30px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+                        <div class="form-group">
+                            <h3>Deadline</h3>
+                            <p id="deadline" style="font-size: 1.1rem; font-weight: bold; color: var(--primary);"></p>
+                        </div>
+
+                        <div class="form-group">
+                            <h3>Total Submissions</h3>
+                            <p id="submission-count" style="font-size: 1.1rem; font-weight: bold;"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="submissions-container" style="display: none;">
+                    <h3 style="margin-bottom: 20px;">Student Submissions</h3>
+                    <div id="submissions-list"></div>
+                </div>
+
+                <div id="loading-message" style="display: none; padding: 20px; text-align: center;">
+                    <p>Loading submissions...</p>
+                </div>
+
+                <div id="error-message" style="display: none; color: red; padding: 20px; background: #ffe6e6; border-radius: 5px; margin: 20px 0;">
+                    <h3>Error Loading Submissions</h3>
+                    <p id="error-text"></p>
+                </div>
+
+                <div id="no-submissions" style="display: none; padding: 40px; text-align: center; color: var(--text-secondary);">
+                    <i class="fas fa-inbox fa-3x" style="margin-bottom: 20px; opacity: 0.5;"></i>
+                    <h3>No Submissions Yet</h3>
+                    <p>No students have submitted this assignment yet.</p>
+                </div>
+
+                <div style="margin-top: 30px;">
+                    <button id="back-btn" class="btn-secondary">Back to Assignment</button>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="../js/dashboard-common.js"></script>
+    <script src="../js/assignments.js"></script>
+    <script>
+        // GATEWAY, currentUser, and token are already declared in dashboard-common.js
+        let assignmentId = null
+        let courseId = null
+        let assignmentData = null
+        let submissions = []
+
+        async function ready() {
+            // Get auth
+            const storedRole = localStorage.getItem('lms_role');
+            token = localStorage.getItem('token');
+
+            if (!storedRole || !token || storedRole !== 'teacher') {
+                alert("Unauthorized access. Redirecting to login.");
+                window.location.href = '../index.html';
+                return;
+            }
+
+            // Get user info
+            await fetchUser();
+
+            if (currentUser) {
+                document.getElementById('user-name').innerText = currentUser['name'];
+            }
+
+            // Get URL parameters
+            const url = new URL(window.location.href);
+            const params = new URLSearchParams(url.search);
+            assignmentId = parseInt(params.get('assignmentId'));
+            courseId = params.get('courseId');
+
+            if (!assignmentId) {
+                showError('No assignment ID provided');
+                return;
+            }
+
+            // courseId is optional - gateway requires it but doesn't use it
+            // Use placeholder value if not provided
+            if (!courseId) {
+                courseId = '0'; // Placeholder since gateway doesn't actually use this value
+            }
+
+            // Initialize dashboard button
+            initializeDashboardBtn();
+
+            // Setup back button
+            document.getElementById('back-btn').addEventListener('click', () => {
+                let url = '../course.html';
+                if (courseId) {
+                    url += '?courseId=' + courseId;
+                }
+                window.location.replace(url);
+            });
+
+            // Load assignment details and submissions
+            await Promise.all([loadAssignmentDetails(), loadSubmissions()]);
+        }
+
+        async function fetchUser() {
+            let url = GATEWAY + '/auth/me'
+            await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            }).then(async (response) => {
+                if (response.ok) {
+                    let json = await response.json()
+                    currentUser = json
+                } else {
+                    console.log('Could not fetch user info')
+                }
+            })
+        }
+
+        async function loadAssignmentDetails() {
+            // For teacher view, we can use a student ID of 0 or fetch without student context
+            // Let's try to get basic assignment info from the submissions endpoint or use a dummy student ID
+            // Actually, let's just show what we can from the submissions data
+            // We'll get assignment title from the first submission or display a generic title
+            document.getElementById('assignment-title').textContent = `Submissions for Assignment #${assignmentId}`;
+        }
+
+        async function loadSubmissions() {
+            // Gateway route requires course_id but doesn't use it - service only needs homework_id
+            const url = GATEWAY + `/homework/submission/${courseId}/${assignmentId}`;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    submissions = await response.json();
+                    displaySubmissions(submissions);
+                } else {
+                    const errorData = await response.json().catch(() => ({ detail: 'Failed to load submissions' }));
+                    showError(errorData.detail || 'Failed to load submissions');
+                }
+            } catch (error) {
+                console.error('Error loading submissions:', error);
+                showError('Network error: Could not connect to server');
+            }
+        }
+
+        function displaySubmissions(submissionsData) {
+            document.getElementById('loading-message').style.display = 'none';
+
+            if (!submissionsData || submissionsData.length === 0) {
+                document.getElementById('no-submissions').style.display = 'block';
+                document.getElementById('submissions-container').style.display = 'none';
+                document.getElementById('assignment-info').style.display = 'none';
+                return;
+            }
+
+            // Update submission count
+            document.getElementById('submission-count').textContent = submissionsData.length;
+
+            // Display submissions list
+            const submissionsList = document.getElementById('submissions-list');
+            submissionsList.innerHTML = '';
+
+            submissionsData.forEach((submission, index) => {
+                const fileName = submission.path ? submission.path.split('/').pop() : 'Unknown file';
+                
+                const submissionCard = document.createElement('div');
+                submissionCard.style.cssText = 'padding: 20px; background: var(--bg-secondary); border-radius: 5px; margin-bottom: 15px; border: 1px solid var(--border-color);';
+                
+                // Escape HTML and JavaScript special characters
+                const escapeHtml = (text) => {
+                    const div = document.createElement('div');
+                    div.textContent = text;
+                    return div.innerHTML;
+                };
+                
+                const escapedFileName = escapeHtml(fileName);
+                const escapedStudentName = escapeHtml(submission.studentName || 'Unknown Student');
+                const escapedStudentEmail = escapeHtml(submission.studentEmail || 'N/A');
+                
+                submissionCard.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 15px;">
+                        <div style="flex: 1; min-width: 250px;">
+                            <h4 style="margin: 0 0 10px 0; color: var(--primary);">
+                                <i class="fas fa-user-graduate"></i> ${escapedStudentName}
+                            </h4>
+                            <p style="margin: 5px 0; color: var(--text-secondary);">
+                                <i class="fas fa-envelope"></i> ${escapedStudentEmail}
+                            </p>
+                            <p style="margin: 5px 0; color: var(--text-secondary);">
+                                <i class="fas fa-id-badge"></i> Student ID: ${submission.studentId}
+                            </p>
+                            <p style="margin: 5px 0; color: var(--text-secondary);">
+                                <i class="fas fa-file"></i> File: ${escapedFileName}
+                            </p>
+                            <p style="margin: 5px 0; color: var(--text-secondary);">
+                                <i class="fas fa-hashtag"></i> Submission ID: ${submission.submissionId}
+                            </p>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <button class="btn-primary download-btn" data-submission-id="${submission.submissionId}" data-file-name="${escapedFileName}" title="Download Submission">
+                                <i class="fas fa-download"></i> Download
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                // Add event listener to the download button
+                const downloadBtn = submissionCard.querySelector('.download-btn');
+                downloadBtn.addEventListener('click', () => {
+                    downloadSubmission(submission.submissionId, fileName);
+                });
+                
+                submissionsList.appendChild(submissionCard);
+            });
+
+            document.getElementById('submissions-container').style.display = 'block';
+            document.getElementById('assignment-info').style.display = 'block';
+        }
+
+        function downloadSubmission(submissionId, fileName) {
+            // Download the submission file
+            const url = GATEWAY + `/homework/submission/${submissionId}/download`;
+            
+            // Create a temporary anchor element to trigger download
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName || `submission_${submissionId}`;
+            
+            // Add authorization header via fetch and create blob
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to download file');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                // Create object URL and trigger download
+                const blobUrl = window.URL.createObjectURL(blob);
+                link.href = blobUrl;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(blobUrl);
+            })
+            .catch(error => {
+                console.error('Download error:', error);
+                alert('Failed to download submission file. Please try again.');
+            });
+        }
+
+        function showError(message) {
+            document.getElementById('error-text').textContent = message;
+            document.getElementById('error-message').style.display = 'block';
+            document.getElementById('loading-message').style.display = 'none';
+            document.getElementById('submissions-container').style.display = 'none';
+        }
+
+        function initializeDashboardBtn() {
+            let dashboardBtn = document.getElementById('dashboard-link');
+            dashboardBtn.addEventListener('click', () => {
+                let url = '../course.html';
+                if (courseId) {
+                    url += '?courseId=' + courseId;
+                }
+                window.location.replace(url);
+            });
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = '../index.html';
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            ready();
+        });
+    </script>
+</body>
+
+</html>
+
