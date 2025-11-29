@@ -128,13 +128,42 @@ async def delete_homework(homework_id: int):
 
 @app.post('/homework/{homework_id}/submit')
 async def submit_homework(homework_id: int, input: SubmissionCreateInput):
-    submission = HomeworkRepo.submit_homework(
-        input.studentId,
-        homework_id,
-        input.file,
-        input.filename 
-    )
-    return submission
+    try:
+        result = HomeworkRepo.submit_homework(
+            input.studentId,
+            homework_id,
+            input.file,
+            input.filename 
+        )
+        
+        submission = result['submission']
+        lateness = result['lateness']
+        
+        return {
+            "success": True,
+            "message": "Submission successful" if not lateness['is_late'] else "Submission accepted (late)",
+            "submission": {
+                "submissionId": submission.submissionId,
+                "studentId": submission.studentId,
+                "homeworkId": submission.homeworkId,
+                "path": submission.path
+            },
+            "lateness": {
+                "is_late": lateness['is_late'],
+                "seconds_late": lateness['seconds_late'],
+                "time_difference": lateness['time_difference']
+            }
+        }
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Submission failed: {str(e)}"
+        )
 
 @app.get('/submission/{homework_id}')
 async def get_submissions(homework_id: int):
