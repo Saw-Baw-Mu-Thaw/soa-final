@@ -41,7 +41,7 @@ async def create_new_material(input : MaterialCreateInput):
                 "materialId" : material.materialId,
                 "courseId": input.courseId
             },
-            timeout = 10
+            timeout = 60
         )
         print(" Notification sent to service")
     except Exception as e:
@@ -69,7 +69,7 @@ async def update_material(material_id : int, input : MaterialUpdateInput,send_no
                     "materialId" : material_id,
                     "courseId" : course_id
                 },
-                timeout= 30
+                timeout= 60
 
             )
     return result

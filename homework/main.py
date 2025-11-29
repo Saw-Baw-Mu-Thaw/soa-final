@@ -73,7 +73,7 @@ async def create_homework(input : HomeworkCreateInput):
                     "homeworkId": homework.homeworkId,
                     "courseId": input.courseId  # This triggers emails!
                 },
-                timeout=10
+                timeout=60
             )
             print(" Notification sent to service")
     except Exception as e:
@@ -110,7 +110,7 @@ async def update_homework(homework_id: int, input: HomeworkUpdateInput, send_not
                         "homeworkId": homework_id,
                         "courseId": course_id
                     },
-                    timeout=30
+                    timeout=60
                 )
     return result
 
