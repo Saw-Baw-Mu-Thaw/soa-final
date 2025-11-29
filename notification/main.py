@@ -1,10 +1,16 @@
 from fastapi import FastAPI, HTTPException, status
 from .repositories import NotificationRepo
 from .models.InputModels import MaterialNotificationInput, HwNotificationInput, NotificationSeenInput
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app : FastAPI):
+    NotificationRepo.start_scheduler()
+    yield
 
 
-app = FastAPI(title='Notification Service')
-
+app = FastAPI(title='Notification Service',lifespan=lifespan)
+    
 @app.get('/')
 async def get_root():
     return 'This is the Notification Service'
