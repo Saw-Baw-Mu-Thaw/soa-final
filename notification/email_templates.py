@@ -27,3 +27,19 @@ Please check the LMS for the latest changes.
 Best regards,
 Your Instructor
 """
+
+def homework_reminder_template(student_name: str, title: str, deadline: str, days_remaining: int):
+    return f"""
+Hello {student_name},
+
+ Reminder: Your homework is due soon!
+
+ Title: {title}
+ Deadline: {deadline}
+ Time remaining: {days_remaining} days
+
+Please make sure to submit your work on time through the LMS.
+
+Best regards,
+Your Instructor
+"""

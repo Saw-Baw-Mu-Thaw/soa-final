@@ -1,9 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+import threading
+import schedule,time
 from sqlmodel import Field, SQLModel, Session, create_engine, select
 from ..models.Notification import MaterialNotification, HwNotification
 from ..config import DATABASE_STRING
 from ..email_utils import send_email
-from ..email_templates import homework_created_template, homework_updated_template
+from ..email_templates import homework_created_template, homework_reminder_template, homework_updated_template
 from sqlmodel import text
 
 engine = create_engine(DATABASE_STRING)
@@ -189,3 +191,75 @@ def get_course_students(course_id: int):
     students = session.exec(statement).all()
     session.close()
     return students
+
+def check_upcoming_deadlines():
+    session = Session(engine)
+    
+    now = datetime.now()
+
+    # 7 day and 3 day
+    one_week_later = now + timedelta(days=7)
+    three_days_later = now + timedelta(days=3)
+    
+    # Define time windows 
+    week_start = one_week_later - timedelta(hours=1)
+    week_end = one_week_later + timedelta(hours=1)
+    
+    three_start = three_days_later - timedelta(hours=1)
+    three_end = three_days_later + timedelta(hours=1)
+    
+    # Get homeworks with deadlines in 7 days
+    statement_week = select(Homework).where(
+        Homework.deadline >= week_start,
+        Homework.deadline <= week_end
+    )
+    homeworks_week = session.exec(statement_week).all()
+    
+    # Get homeworks with deadlines in 3 days
+    statement_three = select(Homework).where(
+        Homework.deadline >= three_start,
+        Homework.deadline <= three_end
+    )
+    homeworks_three = session.exec(statement_three).all()
+    
+    # Send 7-day reminders
+    for hw in homeworks_week:
+        send_deadline_reminder(hw, days_remaining=7)
+    
+    # Send 3-day reminders
+    for hw in homeworks_three:
+        send_deadline_reminder(hw, days_remaining=3)
+    
+    session.close()
+
+def send_deadline_reminder(homework: Homework, days_remaining: int):
+    students = get_course_students(homework.courseId)
+    
+    subject = f"Reminder: {homework.title} - Due in {days_remaining} days"
+    
+    email_count = 0
+    for student in students:
+        body = homework_reminder_template(
+            student_name=student.name,
+            title=homework.title,
+            deadline=homework.deadline.strftime("%Y-%m-%d %H:%M"),
+            days_remaining=days_remaining
+        )
+        
+        if send_email(student.email, subject, body):
+            email_count += 1
+    
+    print(f" Sent {email_count}/{len(students)} reminder emails for '{homework.title}' ({days_remaining} days)")
+
+def start_scheduler():
+    schedule.every().hour.do(check_upcoming_deadlines)
+    
+    def run_scheduler():
+        while True:
+            schedule.run_pending()
+            time.sleep(60)  
+    
+    # Run in background thread
+    scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
+    scheduler_thread.start()
+    print("Homework deadline scheduler started")
