@@ -12,22 +12,7 @@ app  = FastAPI(title='Homework Service')
 
 NOTI_URL = os.getenv("NOTI_URL", "http://localhost:8005/")
 
-def send_homework_notification(title: str, homework_id: int):
-    """Helper function to send homework notification"""
-    try:
-        url = NOTI_URL + 'notifications/homework'
-        data = {
-            'title': title,
-            'homeworkId': homework_id
-        }
-        requests.post(
-            url=url,
-            data=json.dumps(data),
-            headers={'Content-Type': 'application/json'},
-            timeout=5 
-        )
-    except Exception as e:
-        print(f"Failed to send notification: {e}")
+
         
 @app.get("/")
 async def get_root():
@@ -83,11 +68,19 @@ async def create_homework(input : HomeworkCreateInput):
         input.filetype
     )
 
-    send_homework_notification(
-        title=f"New homework: {homework.title}",
-        homework_id=homework.homeworkId
-    )
-
+    try:
+            requests.post(
+                url=f"{NOTI_URL}notifications/homework",
+                json={
+                    "title": homework.title,
+                    "homeworkId": homework.homeworkId,
+                    "courseId": input.courseId  # This triggers emails!
+                },
+                timeout=10
+            )
+            print(" Notification sent to service")
+    except Exception as e:
+            print(f" Notification service failed: {e}")
     return homework
 
 @app.put('/homework/{homework_id}')
@@ -109,14 +102,19 @@ async def update_homework(homework_id: int, input: HomeworkUpdateInput, send_not
     
     
     if send_notification:
-        hw_result = HomeworkRepo.get_homework_detail(homework_id, 0)
-        if hw_result:
-            homework = hw_result['homework']
-            send_homework_notification(
-                title=f"Homework updated: {homework.title}",
-                homework_id=homework.homeworkId
-            )
-    
+            detail_result = HomeworkRepo.get_homework_detail(homework_id, 0)
+            if detail_result:
+                course_id = detail_result['homework'].courseId
+                
+                requests.post(
+                    url=f"{NOTI_URL}notifications/homework",
+                    json={
+                        "title": "Homework Updated",  
+                        "homeworkId": homework_id,
+                        "courseId": course_id
+                    },
+                    timeout=30
+                )
     return result
 
 

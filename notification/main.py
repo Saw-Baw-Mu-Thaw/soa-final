@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, status
 from .repositories import NotificationRepo
 from .models.InputModels import MaterialNotificationInput, HwNotificationInput, NotificationSeenInput
 
+
 app = FastAPI(title='Notification Service')
 
 @app.get('/')
@@ -17,7 +18,8 @@ async def get_all_unseen_notifications():
 async def create_material_notification(input: MaterialNotificationInput):
     notification = NotificationRepo.create_material_notification(
         input.title,
-        input.materialId
+        input.materialId,
+        course_id=input.courseId if hasattr(input, 'courseId') else None,
     )
     return notification
 
@@ -25,7 +27,9 @@ async def create_material_notification(input: MaterialNotificationInput):
 async def create_homework_notification(input: HwNotificationInput):
     notification = NotificationRepo.create_homework_notification(
         input.title,
-        input.homeworkId
+        input.homeworkId,
+        course_id=input.courseId if hasattr(input, 'courseId') else None,  
+        action="created"
     )
     return notification
 
