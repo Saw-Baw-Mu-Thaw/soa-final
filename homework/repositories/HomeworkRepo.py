@@ -134,8 +134,25 @@ def delete_homework(homework_id: int):
     session.close()
     return True
 
-def submit_homework(student_id: int, homework_id: int, file_content: str,filename : str):
+def submit_homework(student_id: int, homework_id: int, file_content: str, filename: str):
     session = get_session()
+    
+    # Get homework details
+    hw_statement = select(Homework).where(Homework.homeworkId == homework_id)
+    homework = session.exec(hw_statement).first()
+    
+    if not homework:
+        session.close()
+        raise ValueError("Homework not found")
+    
+    #  Validate deadline
+    lateness_info = calculate_lateness(homework)
+    
+    # Validate file type
+    is_valid_type, type_error = validate_file_type(filename, homework.filetype)
+    if not is_valid_type:
+        session.close()
+        raise ValueError(type_error)
     
     # Create submission directory
     dir_path = os.path.join(os.path.dirname(__file__), '..', 'submissions', 
@@ -151,20 +168,21 @@ def submit_homework(student_id: int, homework_id: int, file_content: str,filenam
     existing = session.exec(sub_statement).all()
     submission_num = len(existing) + 1
 
-    #Get file extension
+    # Get file extension
     file_ext = os.path.splitext(filename)[1]
     
     # Save file
     file_path = os.path.join(dir_path, f'student-{student_id}-v{submission_num}{file_ext}')
-    with open(file_path, 'w') as f:
-        f.write(file_content)
     
-    #Decode base64 and write as binary
+    # Decode base64 and write as binary
     import base64
-    file_bytes = base64.b64decode(file_content)
-    with open(file_path, 'wb') as f:
-        f.write(file_bytes)
-
+    try:
+        file_bytes = base64.b64decode(file_content)
+        with open(file_path, 'wb') as f:
+            f.write(file_bytes)
+    except Exception as e:
+        session.close()
+        raise ValueError(f"Failed to decode file content: {str(e)}")
         
     # Create submission record
     submission = Submission(
@@ -176,7 +194,11 @@ def submit_homework(student_id: int, homework_id: int, file_content: str,filenam
     session.commit()
     session.refresh(submission)
     session.close()
-    return submission
+    return {
+        'submission': submission,
+        'lateness': lateness_info
+    }
+
 
 def get_submissions_for_homework(homework_id: int):
     session = get_session()
@@ -204,3 +226,67 @@ def get_submissions_for_homework(homework_id: int):
         })
     
     return output
+
+def validate_file_type(filename: str, allowed_types: str) -> tuple[bool, str]:
+    if not allowed_types:
+        return True, ""
+    
+    # Get file extension
+    file_ext = os.path.splitext(filename)[1].lower()
+    
+    if not file_ext:
+        return False, "File must have an extension"
+    
+    allowed_list = [ext.strip().lower() for ext in allowed_types.split(',')]
+    
+    # Normalize extensions 
+    normalized_allowed = []
+    for ext in allowed_list:
+        if ext.startswith('.'):
+            normalized_allowed.append(ext)
+        else:
+            normalized_allowed.append(f'.{ext}')
+    
+    if file_ext not in normalized_allowed:
+        return False, f"Invalid file type '{file_ext}'. Allowed types: {', '.join(normalized_allowed)}"
+    
+    return True, ""
+
+def calculate_lateness(homework: Homework) -> dict:
+
+    now = datetime.now()
+    
+    if now <= homework.deadline:
+        return {
+            'is_late': False,
+            'seconds_late': 0,
+            'time_difference': 'On time'
+        }
+    
+    # Calculate how late
+    time_diff = now - homework.deadline
+    seconds_late = int(time_diff.total_seconds())
+    
+    # Create human-readable format
+    days = time_diff.days
+    hours = time_diff.seconds // 3600
+    minutes = (time_diff.seconds % 3600) // 60
+    seconds = time_diff.seconds % 60
+    
+    parts = []
+    if days > 0:
+        parts.append(f"{days} day{'s' if days != 1 else ''}")
+    if hours > 0:
+        parts.append(f"{hours} hour{'s' if hours != 1 else ''}")
+    if minutes > 0:
+        parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
+    if seconds > 0 and days == 0: 
+        parts.append(f"{seconds} second{'s' if seconds != 1 else ''}")
+    
+    time_difference = ", ".join(parts) if parts else "0 seconds"
+    
+    return {
+        'is_late': True,
+        'seconds_late': seconds_late,
+        'time_difference': time_difference
+    }
