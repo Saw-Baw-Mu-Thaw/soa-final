@@ -8,7 +8,7 @@ from sqlalchemy import text
 
 engine = create_engine(DATABASE_STRING)
 
-# Import Student model for joining
+# Import  local models for joining
 from sqlmodel import SQLModel, Field
 
 class Student(SQLModel, table=True):
@@ -134,7 +134,7 @@ def delete_homework(homework_id: int):
     session.close()
     return True
 
-def submit_homework(student_id: int, homework_id: int, file_content: str):
+def submit_homework(student_id: int, homework_id: int, file_content: str,filename : str):
     session = get_session()
     
     # Create submission directory
@@ -150,12 +150,22 @@ def submit_homework(student_id: int, homework_id: int, file_content: str):
     )
     existing = session.exec(sub_statement).all()
     submission_num = len(existing) + 1
+
+    #Get file extension
+    file_ext = os.path.splitext(filename)[1]
     
     # Save file
-    file_path = os.path.join(dir_path, f'student-{student_id}-v{submission_num}.txt')
+    file_path = os.path.join(dir_path, f'student-{student_id}-v{submission_num}{file_ext}')
     with open(file_path, 'w') as f:
         f.write(file_content)
     
+    #Decode base64 and write as binary
+    import base64
+    file_bytes = base64.b64decode(file_content)
+    with open(file_path, 'wb') as f:
+        f.write(file_bytes)
+
+        
     # Create submission record
     submission = Submission(
         studentId=student_id,

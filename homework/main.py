@@ -2,17 +2,14 @@ import json
 import os
 import requests
 from .repositories import HomeworkRepo
+from .config import NOTI_URL
 from .models.OutputModels import HomeworkDetailOutput
 from .models.InputModels import HomeworkCreateInput, HomeworkUpdateInput, SubmissionCreateInput 
-
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, HTTPException, status
 
 
 app  = FastAPI(title='Homework Service')
-
-NOTI_URL = os.getenv("NOTI_URL", "http://localhost:8005/")
-
-
         
 @app.get("/")
 async def get_root():
@@ -134,7 +131,8 @@ async def submit_homework(homework_id: int, input: SubmissionCreateInput):
     submission = HomeworkRepo.submit_homework(
         input.studentId,
         homework_id,
-        input.file
+        input.file,
+        input.filename 
     )
     return submission
 
