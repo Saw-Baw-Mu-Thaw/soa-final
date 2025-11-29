@@ -33,10 +33,19 @@ async def get_material(material_id : int):
 async def create_new_material(input : MaterialCreateInput):
     material = MaterialRepo.create_new_material(courseId=input.courseId, title=input.title, json=input.json)
 
-    send_material_notification(
-        title=f"New material: {material.title}",
-        material_id=material.materialId
-    )
+    try:
+        requests.post(
+            url = f"{NOTI_URL}notifications/material",
+            json={
+                "title":material.title,
+                "materialId" : material.materialId,
+                "courseId": input.courseId
+            },
+            timeout = 10
+        )
+        print(" Notification sent to service")
+    except Exception as e:
+         print(f" Notification service failed: {e}")
     return material
 
 @app.put('/materials/{material_id}')
@@ -48,13 +57,21 @@ async def update_material(material_id : int, input : MaterialUpdateInput,send_no
         detail='Material does not exist'
         )
     
-    #Only send noti if checkout is checked
     if send_notification:
-        material = MaterialRepo.get_specific_material(material_id)
-        send_material_notification(
-            title=f"Material updated: {material.title}",
-            material_id=material.materialId
-        )
+        detail_result = MaterialRepo.get_specific_material(material_id)
+        if detail_result:
+            course_id = detail_result.courseId
+
+            requests.post(
+                url =f"{NOTI_URL}notifications/material",
+                json = {
+                    "title" : "Material Updated",
+                    "materialId" : material_id,
+                    "courseId" : course_id
+                },
+                timeout= 30
+
+            )
     return result
 
 @app.delete('/materials/{material_id}')
@@ -66,20 +83,3 @@ async def delete_material(material_id : int):
             detail='Material does not exist'
         )
     return
-
-def send_material_notification(title: str, material_id: int):
-    """Helper function to send material notification"""
-    try:
-        url = NOTI_URL + 'notifications/material'
-        data = {
-            'title': title,
-            'materialId': material_id
-        }
-        requests.post(
-            url=url, 
-            data=json.dumps(data),
-            headers={'Content-Type': 'application/json'},
-            timeout=5 
-        )
-    except Exception as e:
-        print(f"Failed to send notification: {e}")
