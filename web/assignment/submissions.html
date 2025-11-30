@@ -111,26 +111,28 @@
                 return;
             }
 
-            // courseId is optional - gateway requires it but doesn't use it
-            // Use placeholder value if not provided
-            if (!courseId) {
-                courseId = '0'; // Placeholder since gateway doesn't actually use this value
-            }
-
             // Initialize dashboard button
             initializeDashboardBtn();
 
             // Setup back button
             document.getElementById('back-btn').addEventListener('click', () => {
+                // Use courseId from assignment data if available, otherwise from URL
+                let finalCourseId = courseId;
+                if (assignmentData && assignmentData.courseId) {
+                    finalCourseId = assignmentData.courseId;
+                }
+                
                 let url = '../course.html';
-                if (courseId) {
-                    url += '?courseId=' + courseId;
+                // Only add courseId if it's valid (not null, undefined, 0, or empty string)
+                if (finalCourseId && finalCourseId !== '0' && finalCourseId !== 0) {
+                    url += '?courseId=' + finalCourseId;
                 }
                 window.location.replace(url);
             });
 
-            // Load assignment details and submissions
-            await Promise.all([loadAssignmentDetails(), loadSubmissions()]);
+            // Load assignment details first to get courseId, then load submissions
+            await loadAssignmentDetails();
+            await loadSubmissions();
         }
 
         async function fetchUser() {
@@ -152,16 +154,52 @@
         }
 
         async function loadAssignmentDetails() {
-            // For teacher view, we can use a student ID of 0 or fetch without student context
-            // Let's try to get basic assignment info from the submissions endpoint or use a dummy student ID
-            // Actually, let's just show what we can from the submissions data
-            // We'll get assignment title from the first submission or display a generic title
-            document.getElementById('assignment-title').textContent = `Submissions for Assignment #${assignmentId}`;
+            // For teachers, we can use student_id=0 (or any dummy value) to get homework details
+            // The endpoint will return the homework object which includes courseId
+            const url = GATEWAY + `/homework/${assignmentId}/0`;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    assignmentData = await response.json();
+                    // Use courseId from assignment data (more reliable)
+                    if (assignmentData && assignmentData.courseId) {
+                        courseId = assignmentData.courseId;
+                    }
+                    // Update assignment title
+                    document.getElementById('assignment-title').textContent = 
+                        assignmentData.title || `Submissions for Assignment #${assignmentId}`;
+                } else {
+                    // If we can't get assignment details, just show generic title
+                    document.getElementById('assignment-title').textContent = 
+                        `Submissions for Assignment #${assignmentId}`;
+                }
+            } catch (error) {
+                console.error('Error loading assignment details:', error);
+                // If we can't get assignment details, just show generic title
+                document.getElementById('assignment-title').textContent = 
+                    `Submissions for Assignment #${assignmentId}`;
+            }
         }
 
         async function loadSubmissions() {
             // Gateway route requires course_id but doesn't use it - service only needs homework_id
-            const url = GATEWAY + `/homework/submission/${courseId}/${assignmentId}`;
+            // Use courseId from assignment data if available, otherwise from URL, or use '0' as fallback
+            let finalCourseId = courseId;
+            if (assignmentData && assignmentData.courseId) {
+                finalCourseId = assignmentData.courseId;
+            }
+            if (!finalCourseId || finalCourseId === '0' || finalCourseId === 0) {
+                finalCourseId = '0'; // Gateway requires it but doesn't use it
+            }
+            const url = GATEWAY + `/homework/submission/${finalCourseId}/${assignmentId}`;
 
             try {
                 const response = await fetch(url, {
@@ -306,9 +344,16 @@
         function initializeDashboardBtn() {
             let dashboardBtn = document.getElementById('dashboard-link');
             dashboardBtn.addEventListener('click', () => {
+                // Use courseId from assignment data if available, otherwise from URL
+                let finalCourseId = courseId;
+                if (assignmentData && assignmentData.courseId) {
+                    finalCourseId = assignmentData.courseId;
+                }
+                
                 let url = '../course.html';
-                if (courseId) {
-                    url += '?courseId=' + courseId;
+                // Only add courseId if it's valid (not null, undefined, 0, or empty string)
+                if (finalCourseId && finalCourseId !== '0' && finalCourseId !== 0) {
+                    url += '?courseId=' + finalCourseId;
                 }
                 window.location.replace(url);
             });

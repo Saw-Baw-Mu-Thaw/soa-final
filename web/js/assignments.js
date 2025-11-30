@@ -7,20 +7,27 @@ async function loadAssignments(courseId) {
     let assignments = []
     let url = GATEWAY + '/homework?course=' + courseId
     
-    await fetch(url, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    }).then(async (response) => {
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        })
+        
         if (response.ok) {
-            let json = await response.json()
-            assignments = json
+            const json = await response.json()
+            // Ensure assignments is always an array
+            assignments = Array.isArray(json) ? json : []
         } else {
-            console.log('Could not fetch assignments for course')
+            console.log('Could not fetch assignments for course:', response.status)
+            assignments = [] // Ensure it's an array even on error
         }
-    })
+    } catch (error) {
+        console.error('Error fetching assignments:', error)
+        assignments = [] // Ensure it's an array on network error
+    }
     
     return assignments
 }
@@ -45,7 +52,8 @@ function editAssignment(assignmentId) {
 // View assignment details (for students and teachers)
 function viewAssignment(assignmentId) {
     let url = './assignment/view.html?assignmentId=' + assignmentId
-    if (currentCourseId) {
+    // Only add courseId if it's valid (not null, undefined, 0, or empty string)
+    if (currentCourseId && currentCourseId !== '0' && currentCourseId !== 0) {
         url += '&courseId=' + currentCourseId
     }
     window.location.replace(url)

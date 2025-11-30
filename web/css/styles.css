@@ -155,20 +155,24 @@ body {
     margin-bottom: 20px;
 }
 
-.dashboard-nav button {
-    background: none;
-    border: 1px solid var(--primary);
-    color: var(--primary);
+.dashboard-nav button,
+.dashboard-nav a {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--white);
+    color: var(--white);
     padding: 8px 16px;
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.9rem;
     transition: all 0.2s;
+    display: inline-block;
+    text-decoration: none;
 }
 
-.dashboard-nav button:hover {
-    background: var(--primary);
-    color: var(--white);
+.dashboard-nav button:hover,
+.dashboard-nav a:hover {
+    background: var(--white);
+    color: var(--primary);
 }
 
 a {

@@ -147,9 +147,16 @@
 
             // Setup cancel button
             document.getElementById('cancel-btn').addEventListener('click', () => {
+                // Use courseId from assignment data if available
+                let finalCourseId = courseId;
+                if (assignmentData && assignmentData.courseId) {
+                    finalCourseId = assignmentData.courseId;
+                }
+                
                 let url = './view.html?assignmentId=' + assignmentId;
-                if (courseId) {
-                    url += '&courseId=' + courseId;
+                // Only add courseId if it's valid (not null, undefined, 0, or empty string)
+                if (finalCourseId && finalCourseId !== '0' && finalCourseId !== 0) {
+                    url += '&courseId=' + finalCourseId;
                 }
                 window.location.replace(url);
             });
@@ -193,6 +200,10 @@
 
                 if (response.ok) {
                     assignmentData = await response.json();
+                    // Use courseId from assignment data if available (more reliable)
+                    if (assignmentData && assignmentData.courseId) {
+                        courseId = assignmentData.courseId;
+                    }
                     displayAssignment(assignmentData);
                 } else {
                     const errorData = await response.json().catch(() => ({ detail: 'Failed to load assignment' }));
@@ -296,9 +307,16 @@
                     
                     // Redirect to view page after 2 seconds
                     setTimeout(() => {
+                        // Use courseId from assignment data if available
+                        let finalCourseId = courseId;
+                        if (assignmentData && assignmentData.courseId) {
+                            finalCourseId = assignmentData.courseId;
+                        }
+                        
                         let redirectUrl = './view.html?assignmentId=' + assignmentId;
-                        if (courseId) {
-                            redirectUrl += '&courseId=' + courseId;
+                        // Only add courseId if it's valid (not null, undefined, 0, or empty string)
+                        if (finalCourseId && finalCourseId !== '0' && finalCourseId !== 0) {
+                            redirectUrl += '&courseId=' + finalCourseId;
                         }
                         window.location.replace(redirectUrl);
                     }, 2000);
@@ -344,9 +362,16 @@
         function initializeDashboardBtn() {
             let dashboardBtn = document.getElementById('dashboard-link');
             dashboardBtn.addEventListener('click', () => {
+                // Use courseId from assignment data if available, otherwise from URL
+                let finalCourseId = courseId;
+                if (assignmentData && assignmentData.courseId) {
+                    finalCourseId = assignmentData.courseId;
+                }
+                
                 let url = '../student.html';
-                if (courseId) {
-                    url += '?courseId=' + courseId;
+                // Only add courseId if it's valid (not null, undefined, 0, or empty string)
+                if (finalCourseId && finalCourseId !== '0' && finalCourseId !== 0) {
+                    url += '?courseId=' + finalCourseId;
                 }
                 window.location.replace(url);
             });

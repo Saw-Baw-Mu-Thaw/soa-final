@@ -13,7 +13,8 @@ async function ready() {
     const storedRole = localStorage.getItem('lms_role');
     token = localStorage.getItem('token');
 
-    if (!storedRole || !token || storedRole !== 'student') {
+    // Allow both students and teachers to view materials
+    if (!storedRole || !token || (storedRole !== 'student' && storedRole !== 'teacher')) {
         alert("Unauthorized access. Redirecting to login.");
         window.location.href = '../index.html';
         return;
@@ -31,7 +32,12 @@ async function ready() {
 
     if (!materialId) {
         alert("No material id specified. Redirecting...");
-        window.location.href = '../student.html';
+        // Redirect based on role
+        if (currentRole === 'student') {
+            window.location.href = '../student.html';
+        } else {
+            window.location.href = '../teacher.html';
+        }
         return;
     }
 
@@ -43,8 +49,8 @@ async function ready() {
 function initializeDashboardBtn() {
     let dashboardBtn = document.getElementById('dashboard-link')
     dashboardBtn.addEventListener('click', () => {
-        // go back to the student dashboard, ideally to the same course view
-        let url = '../student.html'
+        // go back to the appropriate dashboard based on role
+        let url = currentRole === 'student' ? '../student.html' : '../teacher.html'
         if (courseId) {
             url += '?courseId=' + courseId
         }
@@ -59,22 +65,50 @@ async function initializeEditor() {
 
     let url = GATEWAY + '/materials/' + materialId
 
-    await fetch(url, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    }).then(async (response) => {
-        let json = await response.json()
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        })
 
         if (response.ok) {
-            data = JSON.parse(json['json'])
-            title = json['title']
+            const json = await response.json()
+            
+            // Check if json field exists and is valid
+            if (json && json['json']) {
+                try {
+                    data = JSON.parse(json['json'])
+                } catch (parseError) {
+                    console.error('Error parsing material JSON:', parseError)
+                    alert("Could not parse material content")
+                    data = { blocks: [] } // Use empty content as fallback
+                }
+            } else {
+                console.error('Invalid response structure:', json)
+                alert("Invalid material data structure")
+                data = { blocks: [] } // Use empty content as fallback
+            }
+            
+            title = json['title'] || 'Untitled Material'
         } else {
-            console.log('Could not fetch material data')
+            const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }))
+            console.error('Could not fetch material data:', response.status, errorData)
+            alert(errorData.detail || "Could not fetch material data")
+            data = { blocks: [] } // Use empty content as fallback
         }
-    })
+    } catch (error) {
+        console.error('Network error fetching material:', error)
+        alert("Network error: Could not connect to server")
+        data = { blocks: [] } // Use empty content as fallback
+    }
+
+    // Ensure data is always a valid object for EditorJS
+    if (!data || typeof data !== 'object') {
+        data = { blocks: [] }
+    }
 
     editor = new EditorJS({
         holder: 'editorjs',
@@ -96,7 +130,7 @@ async function initializeEditor() {
         readOnly: true,
         onReady: () => {
             let materialTitle = document.getElementById('material-title')
-            materialTitle.textContent = title
+            materialTitle.textContent = title || 'Material'
         }
     })
 

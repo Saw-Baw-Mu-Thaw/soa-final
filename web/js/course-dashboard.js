@@ -10,6 +10,9 @@ async function initCourseDashboard() {
     const url = new URL(window.location.href);
     const params = new URLSearchParams(url.search);
     courseId = params.get('courseId');
+    
+    // Set global currentCourseId so assignment/material functions can use it
+    currentCourseId = courseId;
 
     if (!courseId) {
         alert('No course specified. Redirecting to dashboard.');
@@ -65,8 +68,17 @@ async function fetchUserInfo() {
 }
 
 async function fetchCourseInfo() {
-    // Fetch courses to find the current one
-    let url = GATEWAY + '/course/teacher';
+    // Fetch courses to find the current one - use correct endpoint based on role
+    let url;
+    if (currentRole === 'student') {
+        url = GATEWAY + '/course/student';
+    } else if (currentRole === 'teacher') {
+        url = GATEWAY + '/course/teacher';
+    } else {
+        // For head/faculty, try teacher endpoint as fallback
+        url = GATEWAY + '/course/teacher';
+    }
+    
     await fetch(url, {
         method: 'GET',
         headers: {
@@ -132,8 +144,8 @@ async function showCourseDetail() {
                 <i class="fas fa-plus"></i>
             </button>`;
 
-        // Teacher specific top controls
-        topControls = `<button class="btn-primary" onclick="alert('View All Submissions')">Check All Submissions</button>`;
+        // Teacher specific top controls - removed "Check All Submissions" button
+        topControls = '';
     } else {
         // Student status
         topControls = `<span style="color:green; font-weight:bold"><i class="fas fa-check-circle"></i> Enrolled</span>`;
@@ -232,7 +244,7 @@ async function showCourseDetail() {
         <div class="course-header-banner">
             <div>
                 <button onclick="goBackToDashboard()" 
-                    style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:1rem; padding:0;">
+                    style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:1rem; padding:0; font-weight:500;">
                     &larr; Back to Dashboard
                 </button>
                 <h1 style="margin:10px 0;">${currentCourse['name']}</h1>`;

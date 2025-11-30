@@ -45,24 +45,32 @@ async function viewCourseDetail(courseId) {
     let lectures = []
    
     let url = GATEWAY + '/materials?course_id=' + courseId
-    await fetch(url, {
-        method : 'GET',
-        headers : {
-            'Authorization' : `Bearer ${token}`,
-            'Content-Type' : 'application/json'
-        }
-    }).then(async (response) => {
-        let json = await response.json()
+    try {
+        const response = await fetch(url, {
+            method : 'GET',
+            headers : {
+                'Authorization' : `Bearer ${token}`,
+                'Content-Type' : 'application/json'
+            }
+        })
 
         if(response.ok) {
-            lectures = json
-        }else {
-            console.log('Could not fetch lectures in course')
+            const json = await response.json()
+            // Ensure lectures is always an array
+            lectures = Array.isArray(json) ? json : []
+        } else {
+            console.log('Could not fetch lectures in course:', response.status)
+            lectures = [] // Ensure it's an array even on error
         }
-    })
+    } catch (error) {
+        console.error('Error fetching materials:', error)
+        lectures = [] // Ensure it's an array on network error
+    }
 
     let lectureListHTML = '';
-    lectures.forEach(lec => {
+    // Double-check that lectures is an array before forEach
+    if (Array.isArray(lectures)) {
+        lectures.forEach(lec => {
         let menuHTML = '';
 
         // ONLY Teachers get the 3-dots menu
@@ -91,13 +99,19 @@ async function viewCourseDetail(courseId) {
                 ${menuHTML}
             </div>
         `;
-    });
+        });
+    } else {
+        console.error('Lectures is not an array:', lectures)
+        lectureListHTML = '<p style="color: var(--text-secondary);">No materials available.</p>';
+    }
 
     // Fetch assignments for this course
     let assignments = await loadAssignments(courseId);
     
     let assignmentListHTML = '';
-    assignments.forEach(assignment => {
+    // Double-check that assignments is an array before forEach
+    if (Array.isArray(assignments)) {
+        assignments.forEach(assignment => {
         let assignmentMenuHTML = '';
 
         if (currentRole === 'teacher') {
@@ -130,7 +144,11 @@ async function viewCourseDetail(courseId) {
                 ${assignmentMenuHTML}
             </div>
         `;
-    });
+        });
+    } else {
+        console.error('Assignments is not an array:', assignments)
+        assignmentListHTML = '<p style="color: var(--text-secondary);">No assignments available.</p>';
+    }
 
     let innerHTML = `
         <div class="course-header-banner">

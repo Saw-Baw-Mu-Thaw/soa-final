@@ -128,8 +128,16 @@ def delete_homework(homework_id: int):
     session.close()
     return True
 
-def submit_homework(student_id: int, homework_id: int, file_content: str):
+def submit_homework(student_id: int, homework_id: int, file_content: str, filename: str):
     session = get_session()
+    
+    # Get homework details
+    hw_statement = select(Homework).where(Homework.homeworkId == homework_id)
+    homework = session.exec(hw_statement).first()
+    
+    if not homework:
+        session.close()
+        raise ValueError("Homework not found")
     
     # Create submission directory
     dir_path = os.path.join(os.path.dirname(__file__), '..', 'submissions', 
@@ -144,12 +152,23 @@ def submit_homework(student_id: int, homework_id: int, file_content: str):
     )
     existing = session.exec(sub_statement).all()
     submission_num = len(existing) + 1
+
+    # Get file extension
+    file_ext = os.path.splitext(filename)[1]
     
     # Save file
-    file_path = os.path.join(dir_path, f'student-{student_id}-v{submission_num}.txt')
-    with open(file_path, 'w') as f:
-        f.write(file_content)
+    file_path = os.path.join(dir_path, f'student-{student_id}-v{submission_num}{file_ext}')
     
+    # Decode base64 and write as binary
+    import base64
+    try:
+        file_bytes = base64.b64decode(file_content)
+        with open(file_path, 'wb') as f:
+            f.write(file_bytes)
+    except Exception as e:
+        session.close()
+        raise ValueError(f"Failed to decode file content: {str(e)}")
+        
     # Create submission record
     submission = Submission(
         studentId=student_id,
@@ -188,3 +207,13 @@ def get_submissions_for_homework(homework_id: int):
         })
     
     return output
+
+def get_submission_by_id(submission_id: int):
+    """Get submission by ID and return the file path"""
+    session = get_session()
+    
+    statement = select(Submission).where(Submission.submissionId == submission_id)
+    submission = session.exec(statement).first()
+    session.close()
+    
+    return submission
