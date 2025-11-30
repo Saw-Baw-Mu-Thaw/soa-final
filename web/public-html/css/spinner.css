@@ -1,0 +1,45 @@
+/* General Button Styling */
+.submitButton {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #003366;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    position: relative; /* Essential for positioning the spinner */
+    overflow: hidden;
+    transition: background-color 0.3s ease;
+    min-width: 150px; /* Ensures the button doesn't shrink when text is hidden */
+}
+
+.submitButton:hover:not(:disabled) {
+    background-color: #002244;
+}
+
+.submitButton:disabled {
+    cursor: not-allowed;
+    background-color: #007bff99; /* Slightly faded color when disabled */
+}
+
+/* Spinner Styling (The actual animation) */
+.spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3); /* The light grey circle */
+    border-radius: 50%;
+    border-top-color: #fff; /* The solid color that creates the 'spin' effect */
+    animation: spin 1s ease-in-out infinite;
+    -webkit-animation: spin 1s ease-in-out infinite;
+    /* Optional: Center the spinner if the button text is hidden */
+    margin: 0;
+}
+
+/* Keyframe animation for the spin effect */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+@-webkit-keyframes spin {
+    to { -webkit-transform: rotate(360deg); }
+}

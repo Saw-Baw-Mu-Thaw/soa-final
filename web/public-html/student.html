@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Student Dashboard | University LMS</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/notiModal.css">
+</head>
+
+<body>
+
+    <div class="dashboard-wrapper">
+        <nav class="top-nav">
+            <div class="nav-brand">University LMS</div>
+
+            <div class="nav-controls">
+                <div class="icon-wrapper" 
+                    style="cursor: pointer; margin-right: 15px;">
+                    <i id="noti-icon" class="fas fa-bell"></i>
+                </div>
+
+                <div class="profile-wrapper" onclick="window.location.href='profile.html'" style="cursor: pointer;">
+                    <span id="user-name">Student Name</span>
+                    <i class="fas fa-user-circle fa-lg"></i>
+                </div>
+
+                <button class="btn-logout" onclick="logout()" style="margin-left: 15px;">Logout</button>
+            </div>
+        </nav>
+
+        <div class="main-layout">
+            <section id="content-area" class="content-area">
+                <h2>Loading...</h2>
+            </section>
+        </div>
+    </div>
+
+    <div id="notiModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2 id="modalTitle">Notifications</h2>
+            <h4 id="no-noti-text">No Notifications</h4>
+            <ul id="noti-list">
+                
+            </ul>
+            <button id="seenButton">Seen All</button>
+        </div>
+    </div>
+
+    <script src="js/dashboard-common.js"></script>
+    <script src="js/dashboard-student.js"></script>
+    <script src="js/course-detail.js"></script>
+    <script src="js/materials.js"></script>
+    <script src="js/assignments.js"></script>
+    <script src="js/notifications.js"></script>
+    <script>
+        // On load, verify user is a student and render the default course view
+        document.addEventListener('DOMContentLoaded', () => {
+            initDashboard('student');
+
+            // if a courseId is provided in the URL (e.g. coming back from material page),
+            // open that course directly
+            const url = new URL(window.location.href);
+            const params = new URLSearchParams(url.search);
+            const courseId = params.get('courseId');
+            if (courseId) {
+                // slight delay to allow courses to load first
+                setTimeout(() => {
+                    viewCourseDetail(parseInt(courseId));
+                }, 200);
+            }
+        });
+    </script>
+</body>
+
+</html>

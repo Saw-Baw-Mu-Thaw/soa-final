@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>My Profile | University LMS</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/alertModal.css">
+</head>
+
+<body>
+
+    <div class="dashboard-wrapper">
+        <nav class="top-nav">
+            <div class="nav-brand">University LMS</div>
+            <div class="nav-controls">
+                <button class="btn-logout" onclick="window.history.back()">Back</button>
+            </div>
+        </nav>
+
+        <div class="login-body" style="height: calc(100vh - 60px); align-items: flex-start; padding-top: 50px;">
+            <div class="login-box" style="text-align: left; width: 500px;">
+                <h2 style="color:var(--primary); border-bottom: 2px solid var(--secondary); padding-bottom: 10px;">User
+                    Profile</h2>
+
+                <div style="display:flex; align-items:center; margin-bottom: 20px;">
+                    <i class="fas fa-user-circle fa-4x" style="color:var(--gray); margin-right: 20px;"></i>
+                    <div>
+                        <h3 id="profile-name" style="margin:0;">Loading...</h3>
+                        <p id="profile-role" style="margin:0; color:var(--secondary); font-weight:bold;">Student</p>
+                    </div>
+                </div>
+
+                <div class="login-form">
+                    <label>Email Address</label>
+                    <input type="text" id="profile-email" value="" readonly style="background:#eee;">
+
+                    <label>Major / Department</label>
+                    <input type="text" id="profile-faculty" value="Software Engineering" readonly style="background:#eee;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="alertModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2 id="modalTitle"></h2>
+            <p id="modalSubdescription"></p>
+            <button id="closeModalFooterBtn">Got It</button>
+        </div>
+    </div>
+
+    <script>
+        // Simple script to load user data from LocalStorage
+        const token = localStorage.getItem('token');
+        const storedRole = localStorage.getItem('lms_role');
+
+        if (!token || !storedRole) {
+            window.location.replace('/index.html')
+        }
+
+        let user = null
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            let url = "http://localhost:8000/auth/me"
+
+            await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            }).then(async (response) => {
+                let json = await response.json()
+
+                if (response.ok) {
+                    document.getElementById('profile-name').innerText = json['name'] || 'User';
+                    document.getElementById('profile-email').value = json['email'] || '';
+
+                    if(storedRole ===  'teacher') {
+                        document.getElementById('profile-role').innerText = 'Teacher'
+                        document.getElementById('profile-faculty').value = json['facultyName'] || ""
+                    }else if(storedRole === 'student') {
+                        document.getElementById('profile-role').innerText = 'Student'
+                        document.getElementById('profile-faculty').value = json['majorName'] || ""
+                    }else{
+                        document.getElementById('profile-role').innerText = 'Faculty'
+                        document.getElementById('profile-faculty').value = json['facultyName'] || ""
+                    }
+                }
+                else{
+                    showAlert("Something went wrong")
+                }
+            })
+        })
+
+        function showAlert(title, description = "Dialog will close in 3 seconds") {
+            let modal = document.getElementById('alertModal')
+            let span = document.getElementsByClassName('close-btn')[0]
+            let footerBtn = document.getElementById('closeModalFooterBtn')
+
+            let titleElem = document.getElementById('modalTitle')
+            let descriptionElem = document.getElementById('modalSubdescription')
+
+            titleElem.textContent = title
+            if (description.length != 0) {
+                descriptionElem.textContent = description
+            }
+
+            span.addEventListener('click', () => {
+                modal.style.display = 'none'
+            })
+
+            footerBtn.addEventListener('click', () => {
+                modal.style.display = 'none'
+            })
+
+            window.addEventListener('click', (event) => {
+                if (event.target == modal) {
+                    modal.style.display = 'none'
+                }
+            })
+
+            modal.style.display = 'block';
+
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 3000)
+        }
+
+        function checkInternetConnection() {
+            if (!navigator.onLine) {
+                showAlert('Not Connected', 'Please check your connection')
+                return true;
+            }
+            return false;
+        }
+    </script>
+</body>
+
+</html>
