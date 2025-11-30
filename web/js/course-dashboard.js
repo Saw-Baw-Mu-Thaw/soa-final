@@ -169,7 +169,7 @@ async function showCourseDetail() {
                         <i class="fas fa-ellipsis-v"></i>
                     </button>
                     <div id="dropdown-${material['materialId']}" class="dropdown-content">
-                        <a href="#" onclick="editMaterial(${material['materialId']})">Edit</a>
+                        <a href="#" onclick="editMaterial(${material['materialId']},${courseId})">Edit</a>
                         <a href="#" class="delete-action" onclick="deleteMaterial(${material['materialId']})">Delete</a>
                     </div>
                 </div>

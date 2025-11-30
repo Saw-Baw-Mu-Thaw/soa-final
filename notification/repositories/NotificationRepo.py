@@ -1,7 +1,12 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+import threading
+import schedule,time
 from sqlmodel import Field, SQLModel, Session, create_engine, select
 from ..models.Notification import MaterialNotification, HwNotification
 from ..config import DATABASE_STRING
+from ..email_utils import send_email
+from ..email_templates import homework_created_template, homework_reminder_template, homework_updated_template
+from sqlmodel import text
 
 engine = create_engine(DATABASE_STRING)
 class Homework(SQLModel, table=True):
@@ -19,6 +24,21 @@ class Material(SQLModel, table=True):
     courseId: int = Field(foreign_key='tbl_courses.courseId')
     path: str = Field(default=None)
     title: str = Field(default=None)
+
+class Student(SQLModel, table=True):
+    __tablename__ = 'tbl_students'
+    studentId : int = Field(primary_key=True, default=None)
+    name : str = Field(default=None)
+    email : str = Field(default=None, unique=True)
+    password : str = Field(default=None)
+    majorId : int = Field(foreign_key='tbl_majors.majorId')
+
+class Enrollment(SQLModel, table=True):
+    __tablename__="tbl_enrollments"
+
+    enrollmentId : int = Field(primary_key=True, default=None)
+    studentId : int = Field(foreign_key='tbl_students.studentId')
+    courseId : int = Field(foreign_key='tbl_courses.courseId')
     
 def get_session():
     with Session(engine) as session:
@@ -44,7 +64,7 @@ def get_unseen_notifications():
         'homework_notifications': hw_notifications
     }
 
-def create_material_notification(title: str, material_id: int):
+def create_material_notification(title: str, material_id: int, course_id: int, action: str = "created"):
     session = get_session()
     
     notification = MaterialNotification(
@@ -58,10 +78,35 @@ def create_material_notification(title: str, material_id: int):
     session.close()
     
     # TODO: Send email notification here
+    students = get_course_students(course_id)
+    email_success_count = 0
+    for student in students:
+        if action == "created":
+            body = homework_created_template(
+                student_name=student.name,
+                title=title,
+                deadline="Check LMS for deadline"  
+            )
+        else:  # updated
+            body = homework_updated_template(
+                student_name=student.name,
+                title=title,
+                deadline="Check LMS for updated deadline"
+            )
+        
+        if send_email(
+            to_email=student.email,
+            subject=f"Homework {action.capitalize()}: {title}",
+            message=body
+        ):
+            email_success_count += 1
+    
+    print(f" Sent {email_success_count}/{len(students)} emails for {action} material notification")
+    
     
     return notification
 
-def create_homework_notification(title: str, homework_id: int):
+def create_homework_notification(title: str, homework_id: int, course_id: int, action: str = "created"):
     session = get_session()
     
     notification = HwNotification(
@@ -75,6 +120,30 @@ def create_homework_notification(title: str, homework_id: int):
     session.close()
     
     # TODO: Send email notification here
+    students = get_course_students(course_id)
+    email_success_count = 0
+    for student in students:
+        if action == "created":
+            body = homework_created_template(
+                student_name=student.name,
+                title=title,
+                deadline="Check LMS for deadline"  
+            )
+        else:  # updated
+            body = homework_updated_template(
+                student_name=student.name,
+                title=title,
+                deadline="Check LMS for updated deadline"
+            )
+        
+        if send_email(
+            to_email=student.email,
+            subject=f"Homework {action.capitalize()}: {title}",
+            message=body
+        ):
+            email_success_count += 1
+    
+    print(f" Sent {email_success_count}/{len(students)} emails for {action} homework notification")
     
     return notification
 
@@ -109,3 +178,88 @@ def mark_homework_notifications_seen(notification_ids: list[int]):
     session.commit()
     session.close()
     return True
+
+def get_course_students(course_id: int):
+    session = get_session()
+    
+    statement = (
+        select(Student.studentId, Student.name, Student.email)
+        .join(Enrollment, Student.studentId == Enrollment.studentId)
+        .where(Enrollment.courseId == course_id)
+    )
+    
+    students = session.exec(statement).all()
+    session.close()
+    return students
+
+def check_upcoming_deadlines():
+    session = Session(engine)
+    
+    now = datetime.now()
+
+    # 7 day and 3 day
+    one_week_later = now + timedelta(days=7)
+    three_days_later = now + timedelta(days=3)
+    
+    # Define time windows 
+    week_start = one_week_later - timedelta(hours=1)
+    week_end = one_week_later + timedelta(hours=1)
+    
+    three_start = three_days_later - timedelta(hours=1)
+    three_end = three_days_later + timedelta(hours=1)
+    
+    # Get homeworks with deadlines in 7 days
+    statement_week = select(Homework).where(
+        Homework.deadline >= week_start,
+        Homework.deadline <= week_end
+    )
+    homeworks_week = session.exec(statement_week).all()
+    
+    # Get homeworks with deadlines in 3 days
+    statement_three = select(Homework).where(
+        Homework.deadline >= three_start,
+        Homework.deadline <= three_end
+    )
+    homeworks_three = session.exec(statement_three).all()
+    
+    # Send 7-day reminders
+    for hw in homeworks_week:
+        send_deadline_reminder(hw, days_remaining=7)
+    
+    # Send 3-day reminders
+    for hw in homeworks_three:
+        send_deadline_reminder(hw, days_remaining=3)
+    
+    session.close()
+
+def send_deadline_reminder(homework: Homework, days_remaining: int):
+    students = get_course_students(homework.courseId)
+    
+    subject = f"Reminder: {homework.title} - Due in {days_remaining} days"
+    
+    email_count = 0
+    for student in students:
+        body = homework_reminder_template(
+            student_name=student.name,
+            title=homework.title,
+            deadline=homework.deadline.strftime("%Y-%m-%d %H:%M"),
+            days_remaining=days_remaining
+        )
+        
+        if send_email(student.email, subject, body):
+            email_count += 1
+    
+    print(f" Sent {email_count}/{len(students)} reminder emails for '{homework.title}' ({days_remaining} days)")
+
+def start_scheduler():
+    schedule.every().hour.do(check_upcoming_deadlines)
+    
+    def run_scheduler():
+        while True:
+            schedule.run_pending()
+            time.sleep(60)  
+    
+    # Run in background thread
+    scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
+    scheduler_thread.start()
+    print("Homework deadline scheduler started")

@@ -9,12 +9,9 @@ function createMaterial(courseId) {
     return
 }
 
-function editMaterial(materialId) {
+function editMaterial(materialId, courseId) {
     // use currentCourseId so that the editor page can redirect back to this course
-    let url = './material/edit.html?materialId=' + materialId
-    if (currentCourseId) {
-        url += '&courseId=' + currentCourseId
-    }
+    let url = './material/edit.html?materialId=' + materialId + '&courseId=' + courseId
     window.location.replace(url)
     return;
 }

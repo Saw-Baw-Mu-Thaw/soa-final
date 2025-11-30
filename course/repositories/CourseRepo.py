@@ -1,4 +1,5 @@
 from sqlmodel import create_engine, select, Session
+from sqlalchemy.exc import SQLAlchemyError
 from fastapi import HTTPException, status
 from ..config import DATABASE_STRING
 from ..models.Course import Course
@@ -19,9 +20,16 @@ def get_session():
 def get_courses_for_student(student_id : int):
     session = get_session()
 
-    statement = select(Course, Teacher).where(Enrollment.studentId == student_id).where(Enrollment.courseId == Course.courseId).where(Course.teacherId == Teacher.teacherId)
-    results = session.exec(statement)
-    courses = results.all()
+    try:
+        statement = select(Course, Teacher).where(Enrollment.studentId == student_id).where(Enrollment.courseId == Course.courseId).where(Course.teacherId == Teacher.teacherId)
+        results = session.exec(statement)
+        courses = results.all()
+    except SQLAlchemyError:
+        session.close()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={'Please check your input'}
+        )
 
     session.close()
 
@@ -34,9 +42,16 @@ def get_courses_for_student(student_id : int):
 def get_students_in_course(course_id : int):
     session = get_session()
 
-    statement = select(Student, Enrollment).where(Enrollment.courseId == course_id).where(Enrollment.studentId == Student.studentId)
-    results = session.exec(statement)
-    students = results.all()
+    try:
+        statement = select(Student, Enrollment).where(Enrollment.courseId == course_id).where(Enrollment.studentId == Student.studentId)
+        results = session.exec(statement)
+        students = results.all()
+    except SQLAlchemyError:
+        session.close()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={'Please check your input'}
+        )
 
     session.close()
 
@@ -54,9 +69,16 @@ def get_students_in_course(course_id : int):
 def get_courses_for_teacher(teacher_id : int):
     session = get_session()
 
-    statement = select(Course).where(Course.teacherId == teacher_id)
-    results = session.exec(statement)
-    courses = results.all()
+    try:
+        statement = select(Course).where(Course.teacherId == teacher_id)
+        results = session.exec(statement)
+        courses = results.all()
+    except SQLAlchemyError:
+        session.close()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={'Please check your input'}
+        )
 
     session.close()
 
@@ -66,8 +88,16 @@ def create_course(name : str, majorId : int, teacherId : int):
     session = get_session()
 
     course = Course(name = name, majorId=majorId, teacherId=teacherId)
-    session.add(course)
-    session.commit()
+    try:
+        session.add(course)
+        session.commit()
+    except SQLAlchemyError:
+        session.close()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={'Please check your input'}
+        )
+    
     session.refresh(course)
     session.close()
 
@@ -76,9 +106,16 @@ def create_course(name : str, majorId : int, teacherId : int):
 def modify_course(courseId : int, name : str | None, majorId : int | None, teacherId : int | None):
     session = get_session()
 
-    statement = select(Course).where(Course.courseId == courseId)
-    results = session.exec(statement)
-    course = results.first()
+    try:
+        statement = select(Course).where(Course.courseId == courseId)
+        results = session.exec(statement)
+        course = results.first()
+    except SQLAlchemyError:
+        session.close()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={'Please check your input'}
+        )
 
     if not course:
         return False
@@ -99,9 +136,16 @@ def modify_course(courseId : int, name : str | None, majorId : int | None, teach
 def get_courses_for_head(head_id):
     session = get_session()
 
-    statement = select(Course, Teacher, Major).where(Head.id == head_id).where(Head.facultyId == Faculty.facultyId).where(Major.facultyId == Faculty.facultyId).where(Major.majorId == Course.majorId).where(Teacher.teacherId == Course.teacherId)
-    results = session.exec(statement)
-    courses = results.all()
+    try:
+        statement = select(Course, Teacher, Major).where(Head.id == head_id).where(Head.facultyId == Faculty.facultyId).where(Major.facultyId == Faculty.facultyId).where(Major.majorId == Course.majorId).where(Teacher.teacherId == Course.teacherId)
+        results = session.exec(statement)
+        courses = results.all()
+    except:
+        session.close()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Please check your input'
+        )
 
     mylist = []
     for course, teacher, major in courses:
@@ -118,9 +162,16 @@ def enroll_student(studentId : int, courseId : int):
     session = get_session()
 
     enrollment = Enrollment(studentId=studentId, courseId=courseId)
-    session.add(enrollment)
-    session.commit()
-    session.refresh(enrollment)
+    try:
+        session.add(enrollment)
+        session.commit()
+        session.refresh(enrollment)
+    except:
+        session.close()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Please check your input'
+        )
     session.commit()
     session.close()
 
@@ -129,9 +180,16 @@ def enroll_student(studentId : int, courseId : int):
 def unenroll_student(studentId : int, courseId : int):
     session = get_session()
 
-    statement = select(Enrollment).where(Enrollment.studentId == studentId).where(Enrollment.courseId == courseId)
-    results = session.exec(statement)
-    enrollment = results.first()
+    try:
+        statement = select(Enrollment).where(Enrollment.studentId == studentId).where(Enrollment.courseId == courseId)
+        results = session.exec(statement)
+        enrollment = results.first()
+    except SQLAlchemyError:
+        session.close()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Please check your input'
+        )
 
     if not enrollment:
         return False
@@ -145,9 +203,16 @@ def unenroll_student(studentId : int, courseId : int):
 def get_teachers_in_faculty(head_id : int):
     session = get_session()
 
-    statement = select(Teacher).where(Head.id == head_id).where(Head.facultyId == Teacher.facultyId)
-    results = session.exec(statement)
-    teachers = results.all()
+    try:
+        statement = select(Teacher).where(Head.id == head_id).where(Head.facultyId == Teacher.facultyId)
+        results = session.exec(statement)
+        teachers = results.all()
+    except SQLAlchemyError:
+        session.close()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Please check your input'
+        )
 
     session.close()
 
@@ -160,9 +225,16 @@ def get_teachers_in_faculty(head_id : int):
 def get_students_in_faculty(head_id : int):
     session = get_session()
     
-    statement = select(Student).where(Head.id == head_id).where(Head.facultyId == Major.facultyId).where(Student.majorId == Major.majorId)
-    results = session.exec(statement)
-    students = results.all()
+    try:
+        statement = select(Student).where(Head.id == head_id).where(Head.facultyId == Major.facultyId).where(Student.majorId == Major.majorId)
+        results = session.exec(statement)
+        students = results.all()
+    except SQLAlchemyError:
+        session.close()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Please check your input'
+        )
 
     session.close()
 
@@ -175,9 +247,16 @@ def get_students_in_faculty(head_id : int):
 def get_majors_in_faculty(head_id : int):
     session = get_session()
 
-    statement = select(Head).where(Head.id == head_id)
-    result = session.exec(statement)
-    head = result.first()
+    try:
+        statement = select(Head).where(Head.id == head_id)
+        result = session.exec(statement)
+        head = result.first()
+    except SQLAlchemyError:
+        session.close()
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Please check your input"
+        )
 
     if not head:
         raise HTTPException(
