@@ -1,3 +1,4 @@
+from sqlalchemy import text
 from sqlmodel import Session, create_engine, select
 from sqlalchemy.exc import SQLAlchemyError
 from fastapi import HTTPException, status
@@ -70,6 +71,7 @@ def create_new_material(courseId : int, title : str, json : str):
     material.path = path
     session.add(material)
     session.commit()
+    session.refresh(material)
     session.close()
 
     return material
@@ -99,7 +101,9 @@ def update_material(material_id : int , title : str | None, json : str):
 
 def delete_material(material_id : int):
     session = get_session()
-
+    session.exec(
+        text("DELETE FROM tbl_material_notifications WHERE materialID = :id").params(id=material_id)
+    )
     statement = select(Material).where(Material.materialId == material_id)
     result = session.exec(statement)
     material = result.first()

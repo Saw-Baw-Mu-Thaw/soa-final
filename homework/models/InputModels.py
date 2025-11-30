@@ -18,4 +18,5 @@ class HomeworkUpdateInput(BaseModel):
 class SubmissionCreateInput(BaseModel):
     studentId: int = Field(gt=0)
     homeworkId: int = Field(gt=0)
-    file: str  # This will be base64 or path
+    file: str  
+    filename : str = Field(min_length=1)

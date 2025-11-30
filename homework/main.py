@@ -1,12 +1,16 @@
+import json
+import os
+import requests
 from .repositories import HomeworkRepo
+from .config import NOTI_URL
 from .models.OutputModels import HomeworkDetailOutput
 from .models.InputModels import HomeworkCreateInput, HomeworkUpdateInput, SubmissionCreateInput 
-
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, HTTPException, status
 
 
 app  = FastAPI(title='Homework Service')
-
+        
 @app.get("/")
 async def get_root():
     return 'This is the Homework Service'
@@ -60,10 +64,24 @@ async def create_homework(input : HomeworkCreateInput):
         input.description,
         input.filetype
     )
+
+    try:
+            requests.post(
+                url=f"{NOTI_URL}notifications/homework",
+                json={
+                    "title": homework.title,
+                    "homeworkId": homework.homeworkId,
+                    "courseId": input.courseId  # This triggers emails!
+                },
+                timeout=60
+            )
+            print(" Notification sent to service")
+    except Exception as e:
+            print(f" Notification service failed: {e}")
     return homework
 
 @app.put('/homework/{homework_id}')
-async def update_homework(homework_id: int, input: HomeworkUpdateInput):
+async def update_homework(homework_id: int, input: HomeworkUpdateInput, send_notification: bool = False):
     result = HomeworkRepo.update_homework(
         homework_id,
         input.courseId,
@@ -78,7 +96,24 @@ async def update_homework(homework_id: int, input: HomeworkUpdateInput):
             status_code=status.HTTP_404_NOT_FOUND,
             detail='Homework not found'
         )
+    
+    
+    if send_notification:
+            detail_result = HomeworkRepo.get_homework_detail(homework_id, 0)
+            if detail_result:
+                course_id = detail_result['homework'].courseId
+                
+                requests.post(
+                    url=f"{NOTI_URL}notifications/homework",
+                    json={
+                        "title": "Homework Updated",  
+                        "homeworkId": homework_id,
+                        "courseId": course_id
+                    },
+                    timeout=60
+                )
     return result
+
 
 @app.delete('/homework/{homework_id}')
 async def delete_homework(homework_id: int):
@@ -93,14 +128,45 @@ async def delete_homework(homework_id: int):
 
 @app.post('/homework/{homework_id}/submit')
 async def submit_homework(homework_id: int, input: SubmissionCreateInput):
-    submission = HomeworkRepo.submit_homework(
-        input.studentId,
-        homework_id,
-        input.file
-    )
-    return submission
+    try:
+        result = HomeworkRepo.submit_homework(
+            input.studentId,
+            homework_id,
+            input.file,
+            input.filename 
+        )
+        
+        submission = result['submission']
+        lateness = result['lateness']
+        
+        return {
+            "success": True,
+            "message": "Submission successful" if not lateness['is_late'] else "Submission accepted (late)",
+            "submission": {
+                "submissionId": submission.submissionId,
+                "studentId": submission.studentId,
+                "homeworkId": submission.homeworkId,
+                "path": submission.path
+            },
+            "lateness": {
+                "is_late": lateness['is_late'],
+                "seconds_late": lateness['seconds_late'],
+                "time_difference": lateness['time_difference']
+            }
+        }
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Submission failed: {str(e)}"
+        )
 
 @app.get('/submission/{homework_id}')
 async def get_submissions(homework_id: int):
     submissions = HomeworkRepo.get_submissions_for_homework(homework_id)
     return submissions
+
