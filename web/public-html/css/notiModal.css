@@ -1,0 +1,121 @@
+/* --- Modal Background (The whole screen overlay) --- */
+.modal {
+    /* Initially hidden - will be shown with JavaScript */
+    display: none; 
+    /* Stay on top */
+    position: fixed; 
+    /* Full width and height */
+    z-index: 1; 
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    /* Dark background with some transparency */
+    background-color: rgba(0, 0, 0, 0.4); 
+    /* Enable scrolling if needed */
+    overflow: auto; 
+    /* Center modal content */
+    justify-content: center;
+    align-items: center;
+}
+
+/* --- Modal Content (The notification box itself) --- */
+.modal-content {
+    background-color: #fefefe;
+    /* Max width to prevent it from getting too big */
+    max-width: 400px; 
+    /* Padding for inner content */
+    padding: 20px;
+    /* Rounded corners */
+    border-radius: 8px;
+    /* Subtle shadow */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    /* Make it responsive */
+    width: 90%; 
+    /* Optional: Animate the entry (requires the modal to be centered via flex/grid on the parent) */
+    transform: translateY(-50px);
+    transition: transform 0.3s ease-out;
+    position: relative; /* Needed for the close button positioning */
+}
+
+/* Optional: Animation for when the modal is active (you'd use JS to add a class like '.modal.active') */
+/* .modal.active .modal-content {
+    transform: translateY(0);
+} */
+
+/* --- Modal Title --- */
+#modalTitle {
+    color: #333;
+    margin-top: 0;
+    /* Bottom margin for separation from the list */
+    margin-bottom: 15px; 
+    font-size: 1.5em;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+}
+
+/* --- Close Button --- */
+.close-btn {
+    color: #aaa;
+    /* Position absolutely in the top right corner */
+    position: absolute; 
+    top: 10px;
+    right: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* --- Notification List --- */
+#noti-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    max-height: 300px; /* Set a max height */
+    overflow-y: auto; /* Enable vertical scrolling */
+}
+
+/* Style for individual notification items (assuming you add <li> elements here) */
+#noti-list li {
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9em;
+    color: #555;
+    /* Add a subtle hover effect */
+    transition: background-color 0.2s; 
+}
+
+#noti-list li:hover {
+    background-color: #f9f9f9;
+}
+
+#noti-list li:last-child {
+    border-bottom: none;
+}
+
+/* --- Seen All Button --- */
+#seenButton {
+    /* Push it to the bottom */
+    display: block; 
+    width: 100%;
+    padding: 10px;
+    margin-top: 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s ease;
+}
+
+#seenButton:hover {
+    background-color: #0056b3;
+}

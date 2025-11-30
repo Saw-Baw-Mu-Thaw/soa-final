@@ -1,0 +1,56 @@
+/* Form Group Styling */
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group h3 {
+    font-size: 1.1em;
+    color: #555;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+/* Input, Textarea, and Select Styling */
+.content-area input[type="text"],
+.content-area textarea,
+.content-area input[type="datetime-local"],
+.content-area select {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+    font-size: 1em;
+    color: #333;
+    transition: border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    background-color: #f9f9f9;
+}
+
+/* Focus state for form elements */
+.content-area input[type="text"]:focus,
+.content-area textarea:focus,
+.content-area input[type="datetime-local"]:focus,
+.content-area select:focus {
+    border-color: #007bff; /* Highlight border with primary color on focus */
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+    outline: none; /* Remove default browser outline */
+    background-color: #fff;
+}
+
+/* Specific styling for the textarea */
+.content-area textarea {
+    resize: vertical; /* Allow resizing only vertically */
+    min-height: 100px;
+}
+
+/* Styling for the Select dropdown */
+.content-area select {
+    appearance: none; /* Remove default arrow in some browsers */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%29%22%20viewBox%3D%220%200%20292.4%20292.4%22%3E%3Cpath%20fill%3D%22%23007bff%22%20d%3D%22M287%20197.35L146.2%2056.55%205.4%20197.35l25.8%2025.8%20115%20-115%20115%20115z%22%2F%3E%3C%2Fsvg%3E'); /* Custom arrow (upside down for down arrow) */
+    background-repeat: no-repeat;
+    background-position: right 15px top 50%;
+    background-size: 10px auto;
+    cursor: pointer;
+}

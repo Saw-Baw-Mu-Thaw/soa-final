@@ -1,0 +1,117 @@
+services:
+  mysql-server:
+    image : mysql:8.4.2
+    platform : linux/x86-64
+    ports : 
+     - 3399:3306
+    restart : always
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/sql/:/docker-entrypoint-initdb.d/    
+    environment:
+     - MYSQL_ROOT_PASSWORD=root
+     - MYSQL_USER=user
+     - MYSQL_PASSWORD=user
+
+  phpyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    ports:
+      - 8888:80
+    restart: always
+    environment:
+      - PMA_HOST=mysql-server
+    depends_on:
+      - "mysql-server"
+
+  auth:
+    build: ./auth
+    restart : always
+    ports:
+     - 8001:8080
+    depends_on:
+     - "mysql-server"
+    environment:
+     - SECRET_KEY=MY_SUPER_SECRET_KEY
+     - ALGORITHM=HS256
+     - DATABASE_STRING=mysql+pymysql://root:root@mysql-server/lms_db?charset=utf8mb4
+
+  course:
+    build: ./course
+    restart : always
+    ports:
+     - 8002:8080
+    depends_on:
+     - "mysql-server"
+     - "auth"
+    environment:
+     - DATABASE_STRING=mysql+pymysql://root:root@mysql-server/lms_db?charset=utf8mb4
+
+  material:
+    build: ./material
+    restart : always
+    ports:
+     - 8003:8080
+    depends_on:
+     - "mysql-server"
+     - "auth"
+     - "course"
+    environment:
+     - DATABASE_STRING=mysql+pymysql://root:root@mysql-server/lms_db?charset=utf8mb4
+     - NOTI_URL=http://notification:8080/
+
+  homework:
+    build: ./homework
+    restart : always
+    ports:
+     - 8004:8080
+    depends_on:
+     - "mysql-server"
+     - "auth"
+     - "course"
+    environment:
+     - DATABASE_STRING=mysql+pymysql://root:root@mysql-server/lms_db?charset=utf8mb4
+     - NOTI_URL=http://notification:8080/
+
+  notification:
+    build: ./notification
+    restart : always
+    ports:
+     - 8005:8080
+    depends_on:
+     - "mysql-server"
+     - "auth"
+     - "course"
+     - "homework"
+    environment:
+     - DATABASE_STRING=mysql+pymysql://root:root@mysql-server/lms_db?charset=utf8mb4
+     - SMTP_HOST=smtp.gmail.com
+     - SMTP_PORT=587
+     - SMTP_USER=webfinal2005@gmail.com
+     - SMTP_PASS=quxcufvyaskpreah
+
+  gateway:
+    build: ./gateway
+    restart : always
+    ports : 
+     - 8000:8080
+    depends_on:
+     - "auth"
+     - "course"
+     - "homework"
+     - "material"
+     - "notification"
+    environment:
+     - AUTH_URL=http://auth:8080/
+     - COURSE_URL=http://course:8080/
+     - MATERIAL_URL=http://material:8080/
+     - HOMEWORK_URL=http://homework:8080/
+     - NOTI_URL=http://notification:8080/
+     - SECRET_KEY=MY_SUPER_SECRET_KEY
+     - ALGORITHM=HS256
+     - DATABASE_STRING=mysql+pymysql://root:root@mysql-server/lms_db?charset=utf8mb4
+
+  web:
+    build: ./web
+    restart: always
+    ports:
+     - 8080:80

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Create Assignment | University LMS</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/materialCreate.css">
+    <link rel="stylesheet" href="../css/assignmentCreate.css">
+    <link rel="stylesheet" href="../css/alertModal.css">
+    <link rel="stylesheet" href="../css/spinner.css">
+</head>
+
+<body>
+
+    <div class="dashboard-wrapper">
+        <nav class="top-nav">
+            <div class="nav-brand">University LMS</div>
+
+            <div class="nav-controls">
+                <div class="dashboard-nav">
+                    <button id="dashboard-link">Dashboard</button>
+                </div>
+
+                <div class="profile-wrapper" onclick="window.location.href='../profile.html'" style="cursor: pointer;">
+                    <span id="user-name">Teacher Name</span>
+                    <i class="fas fa-user-tie fa-lg"></i>
+                </div>
+
+                <button class="btn-logout" onclick="logout()" style="margin-left: 15px;">Logout</button>
+            </div>
+        </nav>
+
+        <div class="main-layout">
+            <section id="content-area" class="content-area">
+                <h2 id="assignment-action">Create New Assignment</h2>
+
+                <div class="form-group">
+                    <h3>Title</h3>
+                    <input type="text" id="title" placeholder="Assignment title">
+                </div>
+
+                <div class="form-group">
+                    <h3>Description</h3>
+                    <textarea id="description" rows="4" placeholder="Assignment description"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <h3>Deadline</h3>
+                    <input type="datetime-local" id="deadline">
+                </div>
+
+                <div class="form-group">
+                    <h3>File Type</h3>
+                    <select id="filetype">
+                        <option value="pdf">PDF</option>
+                        <option value="doc">Word Document</option>
+                        <option value="txt">Text File</option>
+                        <option value="zip">ZIP Archive</option>
+                        <option value="any">Any File Type</option>
+                    </select>
+                </div>
+
+                <button id="saveBtn" class="submitButton">
+                    <span id="buttonText">Create Assignment</span>
+                    <span class="spinner" id="loadingSpinner"></span>
+                </button>
+            </section>
+        </div>
+
+        <div id="alertModal" class="modal">
+            <div class="modal-content">
+                <span class="close-btn">&times;</span>
+                <h2 id="modalTitle"></h2>
+                <p id="modalSubdescription"></p>
+                <button id="closeModalFooterBtn">Got It</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/assignmentCreate.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            ready();
+        });
+    </script>
+</body>
+
+</html>

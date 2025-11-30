@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Teacher Dashboard | University LMS</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+
+    <div class="dashboard-wrapper">
+        <nav class="top-nav">
+            <div class="nav-brand">University LMS - Instructor Portal</div>
+            <div class="nav-controls">
+                <div class="profile-wrapper" onclick="window.location.href='profile.html'" style="cursor: pointer;">
+                    <span id="user-name">Instructor Name</span>
+                    <i class="fas fa-user-tie fa-lg"></i>
+                </div>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </div>
+        </nav>
+
+        <div class="main-layout">
+            <section id="content-area" class="content-area">
+                <h2>Loading...</h2>
+            </section>
+        </div>
+    </div>
+
+    <script src="js/dashboard-common.js"></script>
+    <script src="js/dashboard-teacher.js"></script>
+    <script src="js/course-detail.js"></script>
+    <script src="js/materials.js"></script>
+    <script src="js/assignments.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            initDashboard('teacher');
+
+            // if a courseId is provided in the URL (e.g. coming back from material page),
+            // open that course directly
+            const url = new URL(window.location.href);
+            const params = new URLSearchParams(url.search);
+            const courseId = params.get('courseId');
+            if (courseId) {
+                setTimeout(() => {
+                    viewCourseDetail(parseInt(courseId));
+                }, 200);
+            }
+        });
+
+        // Close dropdowns if clicking outside
+        window.onclick = function (event) {
+            if (!event.target.matches('.three-dots-btn') && !event.target.matches('.fa-ellipsis-v')) {
+                var dropdowns = document.getElementsByClassName("dropdown-content");
+                for (var i = 0; i < dropdowns.length; i++) {
+                    var openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains('show')) {
+                        openDropdown.classList.remove('show');
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
