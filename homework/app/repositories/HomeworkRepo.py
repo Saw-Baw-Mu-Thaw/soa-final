@@ -119,7 +119,7 @@ def delete_homework(homework_id: int):
 
     # delete all notifications
     session.exec(
-        text("DELETE FROM tbl_hw_notifications WHERE homeworkId = :id").params(id=homework_id)
+        text("DELETE FROM tbl_assignment_notifications WHERE homeworkId = :id").params(id=homework_id)
     )
     
     # delete all submissions

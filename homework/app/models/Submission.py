@@ -6,5 +6,5 @@ class Submission(SQLModel, table=True):
     
     submissionId: Optional[int] = Field(primary_key=True, default=None)
     studentId: int = Field(foreign_key='tbl_students.studentId')
-    homeworkId: int = Field(foreign_key='tbl_homeworks.homeworkId')
+    homeworkId: int = Field(foreign_key='tbl_assignments.homeworkId')
     path: str = Field(default=None)

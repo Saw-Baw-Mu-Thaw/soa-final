@@ -9,9 +9,9 @@ class MaterialNotification(SQLModel, table=True):
     seen: bool = Field(default=False)
 
 class HwNotification(SQLModel, table=True):
-    __tablename__ = 'tbl_hw_notifications'
+    __tablename__ = 'tbl_assignment_notifications'
     
     id: int = Field(primary_key=True, default=None)
-    homeworkId: int = Field(foreign_key='tbl_homeworks.homeworkId')
+    homeworkId: int = Field(foreign_key='tbl_assignments.homeworkId')
     title: str = Field(default=None)
     seen: bool = Field(default=False)

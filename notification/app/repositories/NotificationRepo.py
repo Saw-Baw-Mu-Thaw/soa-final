@@ -10,7 +10,7 @@ from sqlmodel import text
 
 engine = create_engine(DATABASE_STRING)
 class Homework(SQLModel, table=True):
-    __tablename__ = 'tbl_homeworks'
+    __tablename__ = 'tbl_assignments'
     homeworkId: int = Field(primary_key=True, default=None)
     courseId: int = Field(foreign_key='tbl_courses.courseId')
     deadline: datetime = Field(default=None)

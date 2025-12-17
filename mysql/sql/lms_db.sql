@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 22, 2025 at 06:15 PM
+-- Generation Time: Dec 17, 2025 at 06:29 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -26,12 +26,41 @@ USE `lms_db`;
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `tbl_assignments`
+--
+
+CREATE TABLE `tbl_assignments` (
+  `homeworkId` int(11) NOT NULL,
+  `courseId` int(11) NOT NULL,
+  `deadline` datetime DEFAULT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `filetype` varchar(255) DEFAULT NULL,
+  `attempt` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `tbl_assignment_notifications`
+--
+
+CREATE TABLE `tbl_assignment_notifications` (
+  `id` int(11) NOT NULL,
+  `homeworkId` int(11) DEFAULT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `seen` tinyint(1) DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `tbl_courses`
 --
 
 CREATE TABLE `tbl_courses` (
   `courseId` int(11) NOT NULL,
-  `name` varchar(255) NOT NULL,
+  `name` varchar(255) DEFAULT NULL,
   `teacherId` int(11) NOT NULL,
   `majorId` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -73,19 +102,19 @@ INSERT INTO `tbl_enrollments` (`enrollmentId`, `studentId`, `courseId`) VALUES
 (7, 3, 1),
 (8, 3, 3),
 (9, 3, 4),
-(16, 4, 2),
-(17, 4, 5),
 (10, 5, 1),
 (11, 5, 3),
 (12, 5, 4),
+(13, 8, 1),
+(14, 8, 3),
+(15, 8, 4),
+(16, 4, 2),
+(17, 4, 5),
 (18, 6, 2),
 (19, 6, 5),
 (20, 7, 2),
 (21, 7, 5),
-(13, 8, 1),
 (22, 8, 2),
-(14, 8, 3),
-(15, 8, 4),
 (23, 8, 5);
 
 -- --------------------------------------------------------
@@ -96,7 +125,7 @@ INSERT INTO `tbl_enrollments` (`enrollmentId`, `studentId`, `courseId`) VALUES
 
 CREATE TABLE `tbl_faculty` (
   `facultyId` int(11) NOT NULL,
-  `name` varchar(255) NOT NULL
+  `name` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -114,9 +143,9 @@ INSERT INTO `tbl_faculty` (`facultyId`, `name`) VALUES
 
 CREATE TABLE `tbl_faculty_head` (
   `id` int(11) NOT NULL,
-  `facultyId` int(11) NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `email` varchar(255) NOT NULL,
+  `facultyId` int(11) DEFAULT NULL,
+  `name` varchar(255) DEFAULT NULL,
+  `email` varchar(255) DEFAULT NULL,
   `password` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -130,40 +159,12 @@ INSERT INTO `tbl_faculty_head` (`id`, `facultyId`, `name`, `email`, `password`) 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `tbl_homeworks`
---
-
-CREATE TABLE `tbl_homeworks` (
-  `homeworkId` int(11) NOT NULL,
-  `courseId` int(11) NOT NULL,
-  `deadline` datetime NOT NULL,
-  `title` varchar(255) NOT NULL,
-  `description` varchar(255) DEFAULT NULL,
-  `filetype` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `tbl_hw_notifications`
---
-
-CREATE TABLE `tbl_hw_notifications` (
-  `id` int(11) NOT NULL,
-  `homeworkId` int(11) NOT NULL,
-  `title` varchar(255) NOT NULL,
-  `seen` tinyint(1) DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `tbl_majors`
 --
 
 CREATE TABLE `tbl_majors` (
   `majorId` int(11) NOT NULL,
-  `name` varchar(255) NOT NULL,
+  `name` varchar(255) DEFAULT NULL,
   `facultyId` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -185,7 +186,19 @@ CREATE TABLE `tbl_materials` (
   `materialId` int(11) NOT NULL,
   `courseId` int(11) NOT NULL,
   `path` varchar(255) DEFAULT NULL,
-  `title` varchar(255) NOT NULL
+  `title` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `tbl_material_completions`
+--
+
+CREATE TABLE `tbl_material_completions` (
+  `studentId` int(11) NOT NULL,
+  `materialId` int(11) NOT NULL,
+  `completed` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -197,7 +210,7 @@ CREATE TABLE `tbl_materials` (
 CREATE TABLE `tbl_material_notifications` (
   `id` int(11) NOT NULL,
   `materialId` int(11) NOT NULL,
-  `title` varchar(255) NOT NULL,
+  `title` varchar(255) DEFAULT NULL,
   `seen` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -209,9 +222,9 @@ CREATE TABLE `tbl_material_notifications` (
 
 CREATE TABLE `tbl_students` (
   `studentId` int(11) NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `email` varchar(255) NOT NULL,
-  `password` varchar(255) NOT NULL,
+  `name` varchar(255) DEFAULT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `password` varchar(255) DEFAULT NULL,
   `majorId` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -238,9 +251,11 @@ INSERT INTO `tbl_students` (`studentId`, `name`, `email`, `password`, `majorId`)
 
 CREATE TABLE `tbl_submissions` (
   `submissionId` int(11) NOT NULL,
-  `studentId` int(11) NOT NULL,
-  `homeworkId` int(11) NOT NULL,
-  `path` varchar(255) NOT NULL
+  `studentId` int(11) DEFAULT NULL,
+  `homeworkId` int(11) DEFAULT NULL,
+  `path` varchar(255) DEFAULT NULL,
+  `attempts` int(11) DEFAULT NULL,
+  `score` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -251,9 +266,9 @@ CREATE TABLE `tbl_submissions` (
 
 CREATE TABLE `tbl_teachers` (
   `teacherId` int(11) NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `email` varchar(255) NOT NULL,
-  `password` varchar(255) NOT NULL,
+  `name` varchar(255) DEFAULT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `password` varchar(255) DEFAULT NULL,
   `facultyId` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -272,19 +287,33 @@ INSERT INTO `tbl_teachers` (`teacherId`, `name`, `email`, `password`, `facultyId
 --
 
 --
+-- Indexes for table `tbl_assignments`
+--
+ALTER TABLE `tbl_assignments`
+  ADD PRIMARY KEY (`homeworkId`),
+  ADD KEY `courseId` (`courseId`);
+
+--
+-- Indexes for table `tbl_assignment_notifications`
+--
+ALTER TABLE `tbl_assignment_notifications`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `homeworkId` (`homeworkId`);
+
+--
 -- Indexes for table `tbl_courses`
 --
 ALTER TABLE `tbl_courses`
   ADD PRIMARY KEY (`courseId`),
-  ADD KEY `teacherId` (`teacherId`),
-  ADD KEY `majorId` (`majorId`);
+  ADD KEY `majorId` (`majorId`),
+  ADD KEY `teacherId` (`teacherId`);
 
 --
 -- Indexes for table `tbl_enrollments`
 --
 ALTER TABLE `tbl_enrollments`
   ADD PRIMARY KEY (`enrollmentId`),
-  ADD UNIQUE KEY `studentId` (`studentId`,`courseId`),
+  ADD KEY `studentId` (`studentId`),
   ADD KEY `courseId` (`courseId`);
 
 --
@@ -298,22 +327,7 @@ ALTER TABLE `tbl_faculty`
 --
 ALTER TABLE `tbl_faculty_head`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `facultyId` (`facultyId`),
-  ADD UNIQUE KEY `email` (`email`);
-
---
--- Indexes for table `tbl_homeworks`
---
-ALTER TABLE `tbl_homeworks`
-  ADD PRIMARY KEY (`homeworkId`),
-  ADD KEY `courseId` (`courseId`);
-
---
--- Indexes for table `tbl_hw_notifications`
---
-ALTER TABLE `tbl_hw_notifications`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `homeworkId` (`homeworkId`);
+  ADD KEY `facultyId` (`facultyId`);
 
 --
 -- Indexes for table `tbl_majors`
@@ -330,6 +344,13 @@ ALTER TABLE `tbl_materials`
   ADD KEY `courseId` (`courseId`);
 
 --
+-- Indexes for table `tbl_material_completions`
+--
+ALTER TABLE `tbl_material_completions`
+  ADD PRIMARY KEY (`studentId`,`materialId`),
+  ADD KEY `materialId` (`materialId`);
+
+--
 -- Indexes for table `tbl_material_notifications`
 --
 ALTER TABLE `tbl_material_notifications`
@@ -341,7 +362,6 @@ ALTER TABLE `tbl_material_notifications`
 --
 ALTER TABLE `tbl_students`
   ADD PRIMARY KEY (`studentId`),
-  ADD UNIQUE KEY `email` (`email`),
   ADD KEY `majorId` (`majorId`);
 
 --
@@ -357,12 +377,23 @@ ALTER TABLE `tbl_submissions`
 --
 ALTER TABLE `tbl_teachers`
   ADD PRIMARY KEY (`teacherId`),
-  ADD UNIQUE KEY `email` (`email`),
   ADD KEY `facultyId` (`facultyId`);
 
 --
 -- AUTO_INCREMENT for dumped tables
 --
+
+--
+-- AUTO_INCREMENT for table `tbl_assignments`
+--
+ALTER TABLE `tbl_assignments`
+  MODIFY `homeworkId` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `tbl_assignment_notifications`
+--
+ALTER TABLE `tbl_assignment_notifications`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tbl_courses`
@@ -387,18 +418,6 @@ ALTER TABLE `tbl_faculty`
 --
 ALTER TABLE `tbl_faculty_head`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
--- AUTO_INCREMENT for table `tbl_homeworks`
---
-ALTER TABLE `tbl_homeworks`
-  MODIFY `homeworkId` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `tbl_hw_notifications`
---
-ALTER TABLE `tbl_hw_notifications`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tbl_majors`
@@ -441,11 +460,23 @@ ALTER TABLE `tbl_teachers`
 --
 
 --
+-- Constraints for table `tbl_assignments`
+--
+ALTER TABLE `tbl_assignments`
+  ADD CONSTRAINT `tbl_assignments_ibfk_1` FOREIGN KEY (`courseId`) REFERENCES `tbl_courses` (`courseId`);
+
+--
+-- Constraints for table `tbl_assignment_notifications`
+--
+ALTER TABLE `tbl_assignment_notifications`
+  ADD CONSTRAINT `tbl_assignment_notifications_ibfk_1` FOREIGN KEY (`homeworkId`) REFERENCES `tbl_assignments` (`homeworkId`);
+
+--
 -- Constraints for table `tbl_courses`
 --
 ALTER TABLE `tbl_courses`
-  ADD CONSTRAINT `tbl_courses_ibfk_1` FOREIGN KEY (`teacherId`) REFERENCES `tbl_teachers` (`teacherId`),
-  ADD CONSTRAINT `tbl_courses_ibfk_2` FOREIGN KEY (`majorId`) REFERENCES `tbl_majors` (`majorId`);
+  ADD CONSTRAINT `tbl_courses_ibfk_1` FOREIGN KEY (`majorId`) REFERENCES `tbl_majors` (`majorId`),
+  ADD CONSTRAINT `tbl_courses_ibfk_2` FOREIGN KEY (`teacherId`) REFERENCES `tbl_teachers` (`teacherId`);
 
 --
 -- Constraints for table `tbl_enrollments`
@@ -461,18 +492,6 @@ ALTER TABLE `tbl_faculty_head`
   ADD CONSTRAINT `tbl_faculty_head_ibfk_1` FOREIGN KEY (`facultyId`) REFERENCES `tbl_faculty` (`facultyId`);
 
 --
--- Constraints for table `tbl_homeworks`
---
-ALTER TABLE `tbl_homeworks`
-  ADD CONSTRAINT `tbl_homeworks_ibfk_1` FOREIGN KEY (`courseId`) REFERENCES `tbl_courses` (`courseId`);
-
---
--- Constraints for table `tbl_hw_notifications`
---
-ALTER TABLE `tbl_hw_notifications`
-  ADD CONSTRAINT `tbl_hw_notifications_ibfk_1` FOREIGN KEY (`homeworkId`) REFERENCES `tbl_homeworks` (`homeworkId`);
-
---
 -- Constraints for table `tbl_majors`
 --
 ALTER TABLE `tbl_majors`
@@ -483,6 +502,13 @@ ALTER TABLE `tbl_majors`
 --
 ALTER TABLE `tbl_materials`
   ADD CONSTRAINT `tbl_materials_ibfk_1` FOREIGN KEY (`courseId`) REFERENCES `tbl_courses` (`courseId`);
+
+--
+-- Constraints for table `tbl_material_completions`
+--
+ALTER TABLE `tbl_material_completions`
+  ADD CONSTRAINT `tbl_material_completions_ibfk_1` FOREIGN KEY (`studentId`) REFERENCES `tbl_students` (`studentId`),
+  ADD CONSTRAINT `tbl_material_completions_ibfk_2` FOREIGN KEY (`materialId`) REFERENCES `tbl_materials` (`materialId`);
 
 --
 -- Constraints for table `tbl_material_notifications`
@@ -501,7 +527,7 @@ ALTER TABLE `tbl_students`
 --
 ALTER TABLE `tbl_submissions`
   ADD CONSTRAINT `tbl_submissions_ibfk_1` FOREIGN KEY (`studentId`) REFERENCES `tbl_students` (`studentId`),
-  ADD CONSTRAINT `tbl_submissions_ibfk_2` FOREIGN KEY (`homeworkId`) REFERENCES `tbl_homeworks` (`homeworkId`);
+  ADD CONSTRAINT `tbl_submissions_ibfk_2` FOREIGN KEY (`homeworkId`) REFERENCES `tbl_assignments` (`homeworkId`);
 
 --
 -- Constraints for table `tbl_teachers`
