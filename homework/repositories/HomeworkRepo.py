@@ -118,7 +118,7 @@ def delete_homework(homework_id: int):
     session = get_session()
 
     session.exec(
-        text("DELETE FROM tbl_hw_notifications WHERE homeworkId = :id").params(id=homework_id)
+        text("DELETE FROM tbl_assignment_notifications WHERE homeworkId = :id").params(id=homework_id)
     )
     
     statement = select(Homework).where(Homework.homeworkId == homework_id)
