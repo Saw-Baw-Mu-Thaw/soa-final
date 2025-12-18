@@ -41,3 +41,17 @@ function viewMaterial(materialId) {
     window.location.replace(url);
     return;
 }
+
+
+function seenMaterial(event, materialId) {
+    url = GATEWAY + '/materials/seen/' + materialId
+
+    fetch(url, {
+        method : 'PUT',
+        headers : {
+            'Authorization' : `Bearer ${token}`,
+            'Content-Type' : 'application/json'
+        }
+    })
+    event.target.disabled = true
+}

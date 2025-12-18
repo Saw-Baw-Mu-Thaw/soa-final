@@ -5,6 +5,7 @@ import requests
 from .repositories import MaterialRepo
 from .models.OutputModels import MaterialOutput
 from .models.InputModels import MaterialCreateInput, MaterialUpdateInput
+import uvicorn
 
 app = FastAPI(title='Material Service')
 
@@ -15,9 +16,12 @@ async def get_root():
     return 'This is the Material Service'
 
 @app.get('/materials')
-async def get_materials_in_course(course_id : int):
-    materials = MaterialRepo.get_materials_in_course(course_id)
-    return materials
+async def get_materials_in_course(course_id : int, student_id : int = None):
+    
+    if student_id is None:
+        return MaterialRepo.get_materials_in_course(course_id)
+    else:
+        return MaterialRepo.get_materials_in_course_for_student(course_id, student_id)
 
 @app.get('/materials/{material_id}')
 async def get_material(material_id : int):
@@ -83,3 +87,7 @@ async def delete_material(material_id : int):
             detail='Material does not exist'
         )
     return
+
+@app.put('/materials/seen/{material_id}/{student_id}')
+async def seen_material(material_id : int, student_id : int):
+    result = MaterialRepo.seen_material(student_id, material_id)
