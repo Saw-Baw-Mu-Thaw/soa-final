@@ -10,3 +10,6 @@ class AllMaterialOutput(BaseModel):
     materialId : int 
     courseId : int
     title : str    
+    
+class StudentMaterialOutput(AllMaterialOutput):
+    completed : bool

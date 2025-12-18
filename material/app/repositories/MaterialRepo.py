@@ -1,10 +1,15 @@
+from sqlalchemy import text
 from sqlmodel import Session, create_engine, select
+from sqlalchemy.exc import SQLAlchemyError
+from fastapi import HTTPException, status
 from ..models.Material import Material
 from ..models.Course import Course
 from ..models.Teacher import Teacher
 from ..models.Major import Major
-from ..models.OutputModels import AllMaterialOutput
-from ..models.MaterialNoti import MaterialNotification
+from ..models.Enrollment import Enrollment
+from ..models.Student import Student
+from ..models.MaterialCompletion import MaterialCompletion
+from ..models.OutputModels import AllMaterialOutput, StudentMaterialOutput
 from ..config import DATABASE_STRING
 import os
 
@@ -29,6 +34,20 @@ def get_materials_in_course(course_id):
 
     return mylist
 
+def get_materials_in_course_for_student(course_id, student_id):
+    session = get_session()
+    
+    statement = select(Material, MaterialCompletion).where(Material.courseId == course_id).where(MaterialCompletion.studentId == student_id).where(MaterialCompletion.materialId == Material.materialId)
+    result = session.exec(statement)
+    results = result.all()
+    
+    mylist = []
+    
+    for mat, comp in results:
+        mylist.append(StudentMaterialOutput(materialId=mat.materialId, courseId=course_id, title=mat.title, completed=comp.completed))
+        
+    return mylist
+
 def get_specific_material(material_id : int):
     session = get_session()
 
@@ -44,9 +63,26 @@ def create_new_material(courseId : int, title : str, json : str):
     session = get_session()
 
     material = Material(courseId=courseId, title=title)
-    session.add(material)
-    session.commit()
-    session.refresh(material)
+    try:
+        session.add(material)
+        session.commit()
+        session.refresh(material)
+        
+        statement = select(Enrollment).where(Enrollment.courseId == courseId)
+        result = session.exec(statement)
+        enrollments = result.all()
+        
+        for e in enrollments:
+            comp = MaterialCompletion(studentId=e.studentId, materialId=material.materialId, completed=False)
+            session.add(comp)
+            session.commit()
+            
+    except SQLAlchemyError:
+        session.close()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Please check your input'
+        )
 
     dir = os.path.dirname(__file__)
     path = os.path.join(dir, '..', 'courses', 'course-' + str(courseId), 'material-' + str(material.materialId) + '.json')
@@ -81,26 +117,28 @@ def update_material(material_id : int , title : str | None, json : str):
         material.title = title
         session.add(material)
         session.commit()
-    
-    session.refresh(material)
-    session.close()
+        
     file = open(material.path, 'w')
     file.write(json)
     file.close()
+
+    session.close()
 
     return True
 
 def delete_material(material_id : int):
     session = get_session()
-
-    statement = select(MaterialNotification).where(MaterialNotification.materialId == material_id)
-
-    results = session.exec(statement)
-    notifications = results.all()
-
-    for n in notifications:
-        session.delete(n)
-
+    session.exec(
+        text("DELETE FROM tbl_material_notifications WHERE materialID = :id").params(id=material_id)
+    )
+    
+    statement = select(MaterialCompletion).where(MaterialCompletion.materialId == material_id)
+    result = session.exec(statement)
+    completions = result.all()
+    
+    for c in completions:
+        session.delete(c)
+        
     statement = select(Material).where(Material.materialId == material_id)
     result = session.exec(statement)
     material = result.first()
@@ -113,3 +151,18 @@ def delete_material(material_id : int):
     session.close()
 
     return True
+
+def seen_material(studentId : int, materialId : int):
+    session = get_session()
+    
+    statement = select(MaterialCompletion).where(MaterialCompletion.studentId == studentId).where(MaterialCompletion.materialId == materialId)
+    result = session.exec(statement)
+    completion = result.first()
+    
+    if(completion is not None and not completion.completed):
+        completion.completed = True
+        session.add(completion)
+        session.commit()
+    
+    session.close()
+        

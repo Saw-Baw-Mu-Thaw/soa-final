@@ -82,11 +82,22 @@ async function viewCourseDetail(courseId) {
             // Students just get a view button
             menuHTML = `<button class="btn-primary" style="padding:5px 10px; font-size:0.8rem" onclick="viewMaterial(${lec['materialId']})">View</button>`;
         }
+        checkboxHtml = ''
+
+        if(currentRole == 'student') {
+            checkboxHtml += "<input type='checkbox' onchange='seenMaterial(event, " + lec['materialId'] + ")' style='margin:5px;' "
+            if (lec['completed'] == true){
+                checkboxHtml += " disabled checked/>"
+            }else {
+                checkboxHtml += "/>"
+            }
+        }
 
         lectureListHTML += `
             <div class="lecture-item">
-                <div>
-                    <h4 style="margin:0;">${lec['title']}</h4>
+                <div style='display:inline-block;'>
+                    ${checkboxHtml}
+                    <h4 style="margin:5px; display:inline">${lec['title']}</h4>
                 </div>
                 ${menuHTML}
             </div>

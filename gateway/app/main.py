@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import auth, course, material, homework, notification
+import uvicorn
 
 app = FastAPI(title='API Gateway')
 
@@ -32,4 +33,3 @@ app.include_router(notification.router)
 @app.get('/')
 async def get_root():
     return 'This is the api gateway'
-

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query, Path
 import json
 from typing import Annotated
 import requests
-from ..dependencies import is_student, is_teacher, is_teacher_or_student
+from ..dependencies import is_student, is_teacher, is_teacher_or_student, get_student_id, get_role
 from ..config import MATERIAL_URL
 from ..models.InputModels import CreateMaterialInput, UpdateMaterialInput
 
@@ -10,8 +10,12 @@ from ..models.InputModels import CreateMaterialInput, UpdateMaterialInput
 router = APIRouter(prefix='/materials', tags=['material'])
 
 @router.get('/', dependencies=[Depends(is_teacher_or_student)])
-async def get_materials_in_a_course(course_id : Annotated[int , Query(gt=0)]):
+async def get_materials_in_a_course(course_id : Annotated[int , Query(gt=0)], role : Annotated[str, Depends(get_role)], student_id : Annotated[int, Depends(get_student_id)] = None):
+    
     url = MATERIAL_URL + '/materials?course_id=' + str(course_id)
+    if role == 'student' and student_id is not None:
+        url += "&student_id=" + str(student_id)
+        
     response = requests.get(url=url)
     return response.json()
 
@@ -39,4 +43,10 @@ async def update_material(material_id : Annotated[int, Path(gt=0)], input : Upda
 async def delete_material(material_id : Annotated[int, Path(gt=0)]):
     url = MATERIAL_URL + '/materials/' + str(material_id)
     response = requests.delete(url=url)
+    return response.json()
+
+@router.put('/seen/{material_id}', dependencies=[Depends(is_student)])
+async def seen_material(material_id : Annotated[int, Path(gt=0)], student_id : Annotated[int, Depends(get_student_id)]):
+    url = MATERIAL_URL + '/materials/seen/' + str(material_id) + '/' + str(student_id)
+    response = requests.put(url=url)
     return response.json()
