@@ -43,6 +43,8 @@ async function ready() {
             let description = document.getElementById('description').value.trim();
             let deadline = document.getElementById('deadline').value;
             let filetype = document.getElementById('filetype').value;
+            let maxAttemptsInput = document.getElementById('maxAttempts').value.trim();
+            let maxAttempts = maxAttemptsInput ? parseInt(maxAttemptsInput) : null;
 
             url = GATEWAY + '/homework'
             body = { 
@@ -50,7 +52,8 @@ async function ready() {
                 'title': title, 
                 'description': description,
                 'deadline': deadline,
-                'filetype': filetype
+                'filetype': filetype,
+                'maxAttempts': maxAttempts
             }
             
             startLoading();

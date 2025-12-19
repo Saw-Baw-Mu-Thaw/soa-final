@@ -1,9 +1,10 @@
-from fastapi import Depends, HTTPException, status
-from typing import Annotated
+from fastapi import Depends, HTTPException, status, Request
+from typing import Annotated, Optional
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from .config import ALGORITHM, SECRET_KEY
 import json
+import time
 
 student_scheme = OAuth2PasswordBearer(tokenUrl='/auth/login/student', scheme_name='student_scheme')
 teacher_scheme = OAuth2PasswordBearer(tokenUrl='/auth/login/teacher', scheme_name='teacher_scheme')
@@ -65,11 +66,38 @@ async def verify_token(student_token : Annotated[str, Depends(student_scheme)],
                 headers={'WWW-Authenticate' : 'Bearer'}
                 )
     
-async def is_teacher_or_student(student_token : Annotated[str, Depends(student_scheme)],
-                                teacher_token : Annotated[str, Depends(teacher_scheme)]):
-    if not student_token or not teacher_token:
-                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail='Not a student or teacher')  
+async def get_optional_token(request: Request) -> Optional[str]:
+    """Extract token from Authorization header if present"""
+    authorization = request.headers.get("Authorization")
+    if authorization and authorization.startswith("Bearer "):
+        return authorization.split(" ")[1]
+    return None
+
+async def is_teacher_or_student(request: Request):
+    """Allow either student or teacher token"""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail='Could not validate credentials',
+        headers={'WWW-Authenticate': 'Bearer'}
+    )
+    
+    authorization = request.headers.get("Authorization", "")
+    if not authorization or not authorization.startswith("Bearer "):
+        raise credentials_exception
+    
+    token = authorization.split(" ")[1] if len(authorization.split(" ")) > 1 else None
+    if not token:
+        raise credentials_exception
+    
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        role = payload.get("role")
+        if role in ["student", "teacher"]:
+            return True
+        else:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception  
     
 async def is_teacher_or_head(teacher_token : Annotated[str, Depends(teacher_scheme)],
                              head_token : Annotated[str, Depends(head_scheme)]):

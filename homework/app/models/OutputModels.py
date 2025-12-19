@@ -8,6 +8,7 @@ class HomeworkOutput(BaseModel):
     title: str
     description: str | None
     filetype: str | None
+    maxAttempts: int | None
 
 class HomeworkDetailOutput(BaseModel):
     homeworkId: int
@@ -16,6 +17,7 @@ class HomeworkDetailOutput(BaseModel):
     title: str
     description: str | None
     filetype: str | None
+    maxAttempts: int | None
     remainingAttempt: int | None
     submission: dict | None
 
@@ -26,3 +28,6 @@ class SubmissionOutput(BaseModel):
     path: str
     studentName: str
     studentEmail: str
+    score: float | None = None
+    isReleased: bool | None = None
+    attemptNumber: int | None = None

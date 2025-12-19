@@ -51,9 +51,19 @@
                         </div>
                     </div>
 
+                    <div class="form-group" id="attempts-info" style="margin: 20px 0; padding: 15px; background: var(--bg-secondary); border-radius: 5px;">
+                        <h3>Submission Attempts</h3>
+                        <p id="attempts-text" style="font-size: 1.1rem; font-weight: bold;"></p>
+                    </div>
+
                     <div id="submission-status" style="margin: 20px 0; padding: 15px; background: var(--bg-secondary); border-radius: 5px;">
                         <h3>Submission Status</h3>
                         <div id="submission-info"></div>
+                    </div>
+
+                    <div id="grades-section" style="margin: 20px 0; padding: 15px; background: var(--bg-secondary); border-radius: 5px; display: none;">
+                        <h3>Grades & Scores</h3>
+                        <div id="grades-info"></div>
                     </div>
 
                     <div id="action-buttons" style="margin-top: 30px;">
@@ -190,24 +200,82 @@
             const filetype = data.filetype || 'Any file type';
             document.getElementById('filetype').textContent = filetype.toUpperCase();
 
+            // Attempts information
+            const attemptsInfo = document.getElementById('attempts-info');
+            const attemptsText = document.getElementById('attempts-text');
+            if (data.maxAttempts !== null && data.maxAttempts !== undefined) {
+                if (data.remainingAttempt !== null && data.remainingAttempt !== undefined) {
+                    if (data.remainingAttempt > 0) {
+                        attemptsText.innerHTML = `
+                            <span style="color: var(--primary);">
+                                <i class="fas fa-check-circle"></i> ${data.remainingAttempt} attempt${data.remainingAttempt !== 1 ? 's' : ''} remaining out of ${data.maxAttempts}
+                            </span>
+                        `;
+                    } else {
+                        attemptsText.innerHTML = `
+                            <span style="color: red;">
+                                <i class="fas fa-times-circle"></i> No attempts remaining (${data.maxAttempts} attempts used)
+                            </span>
+                        `;
+                    }
+                } else {
+                    attemptsText.innerHTML = `
+                        <span style="color: var(--primary);">
+                            <i class="fas fa-info-circle"></i> Maximum ${data.maxAttempts} attempt${data.maxAttempts !== 1 ? 's' : ''} allowed
+                        </span>
+                    `;
+                }
+            } else {
+                attemptsText.innerHTML = `
+                    <span style="color: var(--primary);">
+                        <i class="fas fa-infinity"></i> Unlimited attempts allowed
+                    </span>
+                `;
+            }
+
+            // Load submission history to show grades (non-blocking)
+            loadSubmissionHistory(assignmentId, currentUser['studentId']).catch(err => {
+                console.log('[DEBUG] Submission history load failed (non-critical):', err);
+            });
+
             // Submission status
             const submissionInfo = document.getElementById('submission-info');
             if (data.submission) {
+                let scoreDisplay = '';
+                if (data.submission.isReleased === true && data.submission.score !== null && data.submission.score !== undefined) {
+                    scoreDisplay = `
+                        <p style="margin-top: 10px; padding: 10px; background: var(--bg-primary); border-radius: 5px; border-left: 4px solid var(--primary);">
+                            <strong>Score:</strong> 
+                            <span style="color: var(--primary); font-weight: bold; font-size: 1.2rem;">${data.submission.score} points</span>
+                        </p>
+                    `;
+                }
                 submissionInfo.innerHTML = `
                     <p style="color: green; font-weight: bold;">
                         <i class="fas fa-check-circle"></i> Submitted
                     </p>
                     <p style="margin-top: 10px;">Submission ID: ${data.submission.submissionId}</p>
                     <p>File: ${data.submission.path.split('/').pop()}</p>
+                    ${scoreDisplay}
                 `;
-                document.getElementById('resubmit-btn').style.display = 'inline-block';
+                // Show resubmit button only if attempts remaining
+                if (data.remainingAttempt === null || data.remainingAttempt > 0) {
+                    document.getElementById('resubmit-btn').style.display = 'inline-block';
+                } else {
+                    document.getElementById('resubmit-btn').style.display = 'none';
+                }
             } else {
                 submissionInfo.innerHTML = `
                     <p style="color: orange; font-weight: bold;">
                         <i class="fas fa-exclamation-circle"></i> Not Submitted
                     </p>
                 `;
-                document.getElementById('submit-btn').style.display = 'inline-block';
+                // Show submit button only if attempts remaining
+                if (data.remainingAttempt === null || data.remainingAttempt > 0) {
+                    document.getElementById('submit-btn').style.display = 'inline-block';
+                } else {
+                    document.getElementById('submit-btn').style.display = 'none';
+                }
             }
 
             // Show assignment details
@@ -240,6 +308,60 @@
                 submitAssignment(assignmentId);
             }
         });
+
+        async function loadSubmissionHistory(homeworkId, studentId) {
+            const url = GATEWAY + `/homework/submission/${homeworkId}/${studentId}`;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const submissions = await response.json();
+                    displayGrades(submissions);
+                }
+            } catch (error) {
+                console.error('Error loading submission history:', error);
+            }
+        }
+
+        function displayGrades(submissions) {
+            const gradesSection = document.getElementById('grades-section');
+            const gradesInfo = document.getElementById('grades-info');
+
+            if (!submissions || submissions.length === 0) {
+                gradesSection.style.display = 'none';
+                return;
+            }
+
+            // Filter to only show released grades
+            const releasedSubmissions = submissions.filter(sub => sub.isReleased === true && sub.score !== null);
+
+            if (releasedSubmissions.length === 0) {
+                gradesSection.style.display = 'none';
+                return;
+            }
+
+            let gradesHTML = '';
+            releasedSubmissions.forEach(sub => {
+                gradesHTML += `
+                    <div style="padding: 10px; margin: 10px 0; background: var(--bg-primary); border-radius: 5px; border-left: 4px solid var(--primary);">
+                        <p style="margin: 5px 0;">
+                            <strong>Attempt ${sub.attemptNumber}:</strong> 
+                            <span style="color: var(--primary); font-weight: bold; font-size: 1.1rem;">${sub.score} points</span>
+                        </p>
+                    </div>
+                `;
+            });
+
+            gradesInfo.innerHTML = gradesHTML;
+            gradesSection.style.display = 'block';
+        }
 
         function submitAssignment(assignmentId) {
             let url = './submit.html?assignmentId=' + assignmentId;

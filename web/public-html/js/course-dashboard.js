@@ -226,11 +226,20 @@ async function showCourseDetail() {
         // Format deadline
         let deadline = new Date(assignment['deadline']).toLocaleDateString();
         
+        // Format max attempts
+        let attemptsInfo = '';
+        if (assignment['maxAttempts'] !== null && assignment['maxAttempts'] !== undefined) {
+            attemptsInfo = `<p style="margin:5px 0; color:var(--text-secondary); font-size:0.9rem;">Max attempts: ${assignment['maxAttempts']}</p>`;
+        } else {
+            attemptsInfo = `<p style="margin:5px 0; color:var(--text-secondary); font-size:0.9rem;">Unlimited attempts</p>`;
+        }
+        
         assignmentListHTML += `
             <div class="lecture-item">
                 <div>
                     <h4 style="margin:0;">${assignment['title']}</h4>
                     <p style="margin:5px 0; color:var(--secondary)">Due: ${deadline}</p>
+                    ${attemptsInfo}
                 </div>
                 ${assignmentMenuHTML}
             </div>
