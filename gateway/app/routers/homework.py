@@ -16,8 +16,20 @@ async def get_homeworks_in_course(course: Annotated[int, Query(gt=0)]):
 @router.get('/{homework_id}/{student_id}', dependencies=[Depends(is_teacher_or_student)])
 async def get_homework_detail(homework_id: int, student_id: int):
     url = HOMEWORK_URL + f'homework/{homework_id}/{student_id}'
-    response = requests.get(url=url)
-    return response.json()
+    try:
+        response = requests.get(url=url, timeout=10)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            from fastapi import HTTPException, status
+            try:
+                error_data = response.json()
+            except:
+                error_data = {"detail": f"Homework service returned status {response.status_code}"}
+            raise HTTPException(status_code=response.status_code, detail=error_data.get('detail', 'Unknown error'))
+    except requests.exceptions.RequestException as e:
+        from fastapi import HTTPException, status
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"Could not connect to homework service: {str(e)}")
 
 @router.post('', dependencies=[Depends(is_teacher)])
 async def create_homework(data: dict):
@@ -77,6 +89,28 @@ async def download_submission(submission_id: int):
 @router.get('/submission/{course_id}/{homework_id}', dependencies=[Depends(is_teacher)])
 async def get_submissions(course_id: int, homework_id: int):
     url = HOMEWORK_URL + 'submission/' + str(homework_id)
+    response = requests.get(url=url)
+    return response.json()
+
+@router.put('/submission/{submission_id}/grade', dependencies=[Depends(is_teacher)])
+async def grade_submission(submission_id: int, data: dict):
+    """Grade a submission with a score and optionally release it"""
+    url = HOMEWORK_URL + f'submission/{submission_id}/grade'
+    response = requests.put(url=url, data=json.dumps(data),
+                           headers={'Content-Type': 'application/json'})
+    return response.json()
+
+@router.put('/submission/{submission_id}/release', dependencies=[Depends(is_teacher)])
+async def release_submission_grade(submission_id: int):
+    """Release a grade to make it visible to the student"""
+    url = HOMEWORK_URL + f'submission/{submission_id}/release'
+    response = requests.put(url=url, headers={'Content-Type': 'application/json'})
+    return response.json()
+
+@router.get('/submission/{homework_id}/{student_id}', dependencies=[Depends(is_teacher_or_student)])
+async def get_student_submissions(homework_id: int, student_id: int):
+    """Get all submissions for a specific student for a homework"""
+    url = HOMEWORK_URL + f'submission/{homework_id}/{student_id}'
     response = requests.get(url=url)
     return response.json()
 

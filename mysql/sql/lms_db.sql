@@ -255,7 +255,8 @@ CREATE TABLE `tbl_submissions` (
   `homeworkId` int(11) DEFAULT NULL,
   `path` varchar(255) DEFAULT NULL,
   `attempts` int(11) DEFAULT NULL,
-  `score` int(11) DEFAULT NULL
+  `score` int(11) DEFAULT NULL,
+  `released` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------

@@ -72,14 +72,15 @@ def get_homework_detail(homework_id: int, student_id: int):
     }
 
 def create_homework(courseId: int, deadline: datetime, title: str, 
-                   description: str | None, filetype: str | None):
+                   description: str | None, filetype: str | None, maxAttempts: int | None = None):
     session = get_session()
     homework = Homework(
         courseId=courseId,
         deadline=deadline,
         title=title,
         description=description,
-        filetype=filetype
+        filetype=filetype,
+        maxAttempts=maxAttempts
     )
     session.add(homework)
     session.commit()
@@ -88,7 +89,7 @@ def create_homework(courseId: int, deadline: datetime, title: str,
     return homework
 
 def update_homework(homework_id: int, courseId: int | None, deadline: datetime | None,
-                   title: str | None, description: str | None, filetype: str | None):
+                   title: str | None, description: str | None, filetype: str | None, maxAttempts: int | None = None):
     session = get_session()
     statement = select(Homework).where(Homework.homeworkId == homework_id)
     result = session.exec(statement)
@@ -108,6 +109,8 @@ def update_homework(homework_id: int, courseId: int | None, deadline: datetime |
         homework.description = description
     if filetype is not None:
         homework.filetype = filetype
+    if maxAttempts is not None:
+        homework.maxAttempts = maxAttempts
     
     session.add(homework)
     session.commit()
@@ -154,6 +157,19 @@ def submit_homework(student_id: int, homework_id: int, file_content: str, filena
         session.close()
         raise ValueError("Homework not found")
     
+    # Count existing submissions
+    sub_statement = select(Submission).where(
+        Submission.homeworkId == homework_id,
+        Submission.studentId == student_id
+    )
+    existing = session.exec(sub_statement).all()
+    submission_count = len(existing)
+    
+    # Check attempt limit
+    if homework.maxAttempts is not None and submission_count >= homework.maxAttempts:
+        session.close()
+        raise ValueError(f"Maximum submission attempts reached ({homework.maxAttempts} attempts allowed)")
+    
     #  Validate deadline
     lateness_info = calculate_lateness(homework)
     
@@ -169,13 +185,7 @@ def submit_homework(student_id: int, homework_id: int, file_content: str, filena
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
     
-    # Count existing submissions
-    sub_statement = select(Submission).where(
-        Submission.homeworkId == homework_id,
-        Submission.studentId == student_id
-    )
-    existing = session.exec(sub_statement).all()
-    submission_num = len(existing) + 1
+    submission_num = submission_count + 1
 
     # Get file extension
     file_ext = os.path.splitext(filename)[1]
@@ -217,27 +227,43 @@ def get_submissions_for_homework(homework_id: int):
         Submission.homeworkId == homework_id
     ).where(
         Submission.studentId == Student.studentId
-    )
+    ).order_by(Submission.studentId, Submission.submissionId)
     results = session.exec(statement)
     submissions_with_students = results.all()
     session.close()
     
+    # Track attempt numbers per student
+    student_attempt_counts = {}
+    
     # Format output
     output = []
     for submission, student in submissions_with_students:
+        # Calculate attempt number for this student
+        if submission.studentId not in student_attempt_counts:
+            student_attempt_counts[submission.studentId] = 0
+        student_attempt_counts[submission.studentId] += 1
+        
         output.append({
             'submissionId': submission.submissionId,
             'studentId': submission.studentId,
             'homeworkId': submission.homeworkId,
             'path': submission.path,
             'studentName': student.name,
-            'studentEmail': student.email
+            'studentEmail': student.email,
+            'score': submission.score,
+            'isReleased': submission.isReleased,
+            'attemptNumber': student_attempt_counts[submission.studentId]
         })
     
     return output
 
 def validate_file_type(filename: str, allowed_types: str) -> tuple[bool, str]:
     if not allowed_types:
+        return True, ""
+    
+    # Check if "any" is specified (case-insensitive)
+    allowed_lower = allowed_types.lower().strip()
+    if allowed_lower == "any":
         return True, ""
     
     # Get file extension
@@ -251,6 +277,8 @@ def validate_file_type(filename: str, allowed_types: str) -> tuple[bool, str]:
     # Normalize extensions 
     normalized_allowed = []
     for ext in allowed_list:
+        if ext == "any":
+            return True, ""  # Allow any file type
         if ext.startswith('.'):
             normalized_allowed.append(ext)
         else:
@@ -309,3 +337,72 @@ def get_submission_by_id(submission_id: int):
     session.close()
     
     return submission
+
+def grade_submission(submission_id: int, score: float, is_released: bool) -> bool:
+    """Grade a submission with a score and optionally release it"""
+    session = get_session()
+    
+    statement = select(Submission).where(Submission.submissionId == submission_id)
+    submission = session.exec(statement).first()
+    
+    if not submission:
+        session.close()
+        return False
+    
+    submission.score = score
+    submission.isReleased = is_released
+    
+    session.add(submission)
+    session.commit()
+    session.close()
+    return True
+
+def release_submission_grade(submission_id: int) -> bool:
+    """Release a grade to make it visible to the student"""
+    session = get_session()
+    
+    statement = select(Submission).where(Submission.submissionId == submission_id)
+    submission = session.exec(statement).first()
+    
+    if not submission:
+        session.close()
+        return False
+    
+    if submission.score is None:
+        session.close()
+        return False  # Cannot release ungraded submission
+    
+    submission.isReleased = True
+    
+    session.add(submission)
+    session.commit()
+    session.close()
+    return True
+
+def get_student_submissions(homework_id: int, student_id: int):
+    """Get all submissions for a specific student for a homework"""
+    session = get_session()
+    
+    statement = select(Submission).where(
+        Submission.homeworkId == homework_id,
+        Submission.studentId == student_id
+    ).order_by(Submission.submissionId)
+    
+    results = session.exec(statement)
+    submissions = results.all()
+    session.close()
+    
+    # Format output with attempt numbers
+    output = []
+    for idx, submission in enumerate(submissions, 1):
+        output.append({
+            'submissionId': submission.submissionId,
+            'studentId': submission.studentId,
+            'homeworkId': submission.homeworkId,
+            'path': submission.path,
+            'score': submission.score,
+            'isReleased': submission.isReleased,
+            'attemptNumber': idx
+        })
+    
+    return output

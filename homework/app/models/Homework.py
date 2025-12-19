@@ -1,5 +1,6 @@
 from typing import Optional
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, Column
+from sqlalchemy import Integer
 from datetime import datetime
 
 class Homework(SQLModel, table=True):
@@ -11,3 +12,4 @@ class Homework(SQLModel, table=True):
     title: str = Field(default=None)
     description: str = Field(default=None)
     filetype: str = Field(default=None)
+    maxAttempts: Optional[int] = Field(default=None, sa_column=Column('attempt', Integer, nullable=True))

@@ -224,6 +224,13 @@
                 const escapedStudentName = escapeHtml(submission.studentName || 'Unknown Student');
                 const escapedStudentEmail = escapeHtml(submission.studentEmail || 'N/A');
 
+                const attemptNumber = submission.attemptNumber || 'N/A';
+                const score = submission.score !== null && submission.score !== undefined ? submission.score : 'Not graded';
+                const isReleased = submission.isReleased === true;
+                const scoreDisplay = score === 'Not graded' ? 
+                    '<span style="color: orange;">Not graded</span>' : 
+                    `<span style="color: ${isReleased ? 'green' : 'gray'}; font-weight: bold;">${score} points${isReleased ? ' (Released)' : ' (Not released)'}</span>`;
+
                 submissionCard.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 15px;">
                         <div style="flex: 1; min-width: 250px;">
@@ -242,11 +249,40 @@
                             <p style="margin: 5px 0; color: var(--text-secondary);">
                                 <i class="fas fa-hashtag"></i> Submission ID: ${submission.submissionId}
                             </p>
+                            <p style="margin: 5px 0; color: var(--text-secondary);">
+                                <i class="fas fa-redo"></i> Attempt: ${attemptNumber}
+                            </p>
+                            <p style="margin: 5px 0; color: var(--text-secondary);">
+                                <i class="fas fa-star"></i> Score: ${scoreDisplay}
+                            </p>
                         </div>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <button class="btn-primary download-btn" data-submission-id="${submission.submissionId}" data-file-name="${escapedFileName}" title="Download Submission">
-                                <i class="fas fa-download"></i> Download
-                            </button>
+                        <div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-end;">
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <button class="btn-primary download-btn" data-submission-id="${submission.submissionId}" data-file-name="${escapedFileName}" title="Download Submission">
+                                    <i class="fas fa-download"></i> Download
+                                </button>
+                            </div>
+                            <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+                                <input type="number" 
+                                       id="score-input-${submission.submissionId}" 
+                                       placeholder="Score" 
+                                       min="0" 
+                                       step="0.01"
+                                       value="${score !== 'Not graded' ? score : ''}"
+                                       style="width: 100px; padding: 5px; border: 1px solid var(--border-color); border-radius: 3px;">
+                                <button class="btn-primary grade-btn" 
+                                        data-submission-id="${submission.submissionId}" 
+                                        title="Grade Submission">
+                                    <i class="fas fa-check"></i> Grade
+                                </button>
+                                ${score !== 'Not graded' && !isReleased ? `
+                                <button class="btn-secondary release-btn" 
+                                        data-submission-id="${submission.submissionId}" 
+                                        title="Release Grade to Student">
+                                    <i class="fas fa-paper-plane"></i> Release
+                                </button>
+                                ` : ''}
+                            </div>
                         </div>
                     </div>
                 `;
@@ -256,6 +292,22 @@
                 downloadBtn.addEventListener('click', () => {
                     downloadSubmission(submission.submissionId, fileName);
                 });
+
+                // Add event listener to the grade button
+                const gradeBtn = submissionCard.querySelector('.grade-btn');
+                if (gradeBtn) {
+                    gradeBtn.addEventListener('click', () => {
+                        gradeSubmission(submission.submissionId);
+                    });
+                }
+
+                // Add event listener to the release button
+                const releaseBtn = submissionCard.querySelector('.release-btn');
+                if (releaseBtn) {
+                    releaseBtn.addEventListener('click', () => {
+                        releaseGrade(submission.submissionId);
+                    });
+                }
 
                 submissionsList.appendChild(submissionCard);
             });
@@ -318,6 +370,75 @@
                 }
                 window.location.replace(url);
             });
+        }
+
+        async function gradeSubmission(submissionId) {
+            const scoreInput = document.getElementById(`score-input-${submissionId}`);
+            const score = parseFloat(scoreInput.value);
+
+            if (isNaN(score) || score < 0) {
+                alert('Please enter a valid score (must be >= 0)');
+                return;
+            }
+
+            const url = GATEWAY + `/homework/submission/${submissionId}/grade`;
+            const body = {
+                'score': score,
+                'isReleased': false
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    body: JSON.stringify(body),
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    alert('Submission graded successfully!');
+                    // Reload submissions to show updated score
+                    await loadSubmissions();
+                } else {
+                    const errorData = await response.json().catch(() => ({ detail: 'Failed to grade submission' }));
+                    alert(errorData.detail || 'Failed to grade submission');
+                }
+            } catch (error) {
+                console.error('Error grading submission:', error);
+                alert('Network error: Could not grade submission');
+            }
+        }
+
+        async function releaseGrade(submissionId) {
+            if (!confirm('Are you sure you want to release this grade to the student?')) {
+                return;
+            }
+
+            const url = GATEWAY + `/homework/submission/${submissionId}/release`;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    alert('Grade released to student successfully!');
+                    // Reload submissions to show updated release status
+                    await loadSubmissions();
+                } else {
+                    const errorData = await response.json().catch(() => ({ detail: 'Failed to release grade' }));
+                    alert(errorData.detail || 'Failed to release grade');
+                }
+            } catch (error) {
+                console.error('Error releasing grade:', error);
+                alert('Network error: Could not release grade');
+            }
         }
 
         function logout() {
