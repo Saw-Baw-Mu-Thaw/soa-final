@@ -44,6 +44,7 @@ async function ready() {
     initializeLeaveWithoutSavingBtn()
 }
 
+
 function initializeLeaveWithoutSavingBtn() {
     let saveWithoutLeavingBtn = document.getElementById('saveWithoutLeavingBtn')
 

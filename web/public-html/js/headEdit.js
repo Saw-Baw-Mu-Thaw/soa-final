@@ -38,6 +38,8 @@ async function ready() {
 
     getQueryParam();
 
+    initializeStatisticBtn();
+
     await fetchTeachers()
 
     await fetchMajors()
@@ -55,6 +57,17 @@ async function ready() {
     inputForm.style.display = 'flex'
     enrollmentTable.style.display = ''
 }
+
+function initializeStatisticBtn() {
+    let statBtn = document.getElementById('statistics-link')
+
+    statBtn.addEventListener('click', () => {
+        window.location.replace("../statistics-faculty.html?courseId=" + courseId);
+        return;
+    })
+    
+}
+
 
 async function fetchCourse() {
 
