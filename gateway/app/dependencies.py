@@ -99,6 +99,12 @@ async def is_teacher_or_student(request: Request):
     except JWTError:
         raise credentials_exception  
     
+async def is_teacher_or_head(teacher_token : Annotated[str, Depends(teacher_scheme)],
+                             head_token : Annotated[str, Depends(head_scheme)]):
+    if not head_token or not teacher_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Not a teacher or faculty head")
+        
 async def is_head(token : Annotated[str, Depends(head_scheme)]):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
