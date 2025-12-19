@@ -8,8 +8,12 @@ from ..models.Enrollment import Enrollment
 from ..models.Head import Head
 from ..models.Faculty import Faculty
 from ..models.Major import Major
+from ..models.MaterialCompletion import MaterialCompletion
 from ..models.OutputModels import CourseStudentOutput, CourseOutput, CourseHeadOutput, TeacherOutput, StudentOutput
 from ..models.Teacher import Teacher
+from ..models.Material import Material
+from ..models.Homework import Homework
+from ..models.Submission import Submission
 
 engine = create_engine(DATABASE_STRING)
 
@@ -272,3 +276,71 @@ def get_majors_in_faculty(head_id : int):
 
     return majors
 
+def get_course_statistics(course_id : int):
+    session = get_session()
+    
+    statement = select(Enrollment).where(Enrollment.courseId == course_id)
+    enrollments = session.exec(statement).all()
+    
+    statement = select(Material).where(Material.courseId == course_id)
+    materials = session.exec(statement).all()
+    
+    statement = select(Homework).where(Homework.courseId == course_id)
+    homeworks = session.exec(statement).all()
+    
+    all_statistics = []
+    
+    for e in enrollments:
+        statement = select(Student).where(Student.studentId == e.studentId)
+        student = session.exec(statement).first()
+        mydict = dict()
+        
+        mydict['student_id'] = student.studentId
+        mydict['student_name'] = student.name
+        
+        mydict['total_materials'] = len(materials)
+        mydict['total_homeworks'] = len(homeworks)
+        
+        completed_materials = 0
+        submitted_homeworks = 0
+        material_list = []
+        homework_list = []
+        
+        for m in materials:
+            statement = select(MaterialCompletion).where(MaterialCompletion.studentId == student.studentId).where(MaterialCompletion.materialId == m.materialId)
+            comp = session.exec(statement).first()
+            
+            if comp.completed == True:
+                completed_materials += 1
+            
+            temp = {'material_name' : m.title, 'completed' : comp.completed}
+            material_list.append(temp)
+            
+        for h in homeworks:
+            statement = select(Submission).where(Submission.studentId == student.studentId).where(Submission.homeworkId == h.homeworkId)
+            sub = session.exec(statement).first()
+            
+            temp = {'homework_title' : h.title}
+            
+            if sub is not None:
+                submitted_homeworks += 1
+                temp['submitted'] = True
+            else:
+                temp['submitted'] = False
+                
+            homework_list.append(temp)
+        
+        mydict['material_completed'] = completed_materials
+        mydict['homework_completed'] = submitted_homeworks
+        
+        mydict['materials'] = material_list
+        mydict['homeworks'] = homework_list
+        
+        all_statistics.append(mydict)
+                
+    return all_statistics    
+            
+        
+        
+        
+        

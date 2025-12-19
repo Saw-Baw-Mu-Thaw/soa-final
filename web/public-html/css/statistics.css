@@ -1,0 +1,44 @@
+.incomplete {
+    color : red;
+}
+
+.complete {
+    color : green;
+}
+
+ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+div[id^="detail-"] {
+    height: fit-content;
+    border : 2px solid grey;
+    border-bottom-left-radius: 25px;
+    border-bottom-right-radius: 25px;
+    transition: height 1s ease-out, padding 1s ease;
+    background-color: #f9f9f9; 
+}
+
+div[id^="detail-"].is-active {
+  padding: 10px 10px;
+}
+
+div[data-id] {
+  cursor: pointer;
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  gap: 15px;
+  font-weight: bold;
+}
+
+i {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+span {
+    margin-left: 10px;
+    margin-right: 10px;
+}

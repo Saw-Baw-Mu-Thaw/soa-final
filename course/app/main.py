@@ -74,3 +74,7 @@ async def get_students_in_faculty(head_id : int):
 async def get_majors_in_faculty(head_id : int):
     results = CourseRepo.get_majors_in_faculty(head_id)
     return results
+
+@app.get('/course/statistics/{course_id}')
+async def get_course_statistics(course_id : int):
+    return CourseRepo.get_course_statistics(course_id)

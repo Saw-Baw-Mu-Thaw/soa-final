@@ -42,6 +42,8 @@ async function initCourseDashboard() {
     // Initialize back button
     initializeBackButton();
 
+    initializeStatisticsButton();
+
     // Show the course detail view (like the original)
     showCourseDetail();
 }
@@ -97,6 +99,13 @@ function initializeBackButton() {
             window.location.href = 'faculty.html';
         }
     });
+}
+
+function initializeStatisticsButton() {
+    const statButton = document.getElementById('statisticsBtn')
+    statButton.addEventListener('click', () => {
+        window.location.replace("./statistics.html?courseId=" + courseId)
+    })
 }
 
 // ===========================

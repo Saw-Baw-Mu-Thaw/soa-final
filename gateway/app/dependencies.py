@@ -67,10 +67,16 @@ async def verify_token(student_token : Annotated[str, Depends(student_scheme)],
     
 async def is_teacher_or_student(student_token : Annotated[str, Depends(student_scheme)],
                                 teacher_token : Annotated[str, Depends(teacher_scheme)]):
-    if not student_scheme or not teacher_scheme:
+    if not student_token or not teacher_token:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail='Not a student or teacher')  
     
+async def is_teacher_or_head(teacher_token : Annotated[str, Depends(teacher_scheme)],
+                             head_token : Annotated[str, Depends(head_scheme)]):
+    if not head_token or not teacher_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Not a teacher or faculty head")
+        
 async def is_head(token : Annotated[str, Depends(head_scheme)]):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

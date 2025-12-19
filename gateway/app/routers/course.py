@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Path
 from typing import Annotated
 import requests
 from ..config import COURSE_URL
-from ..dependencies import verify_token, is_head, is_student, is_teacher, get_student_id, get_teacher_id, get_head_id
+from ..dependencies import verify_token, is_head, is_student, is_teacher, get_student_id, get_teacher_id, get_head_id, is_teacher_or_head
 from ..models.InputModels import CreateCourseInput, UpdateCouresInput, EnrollStudentInput
 import json
 
@@ -74,5 +74,11 @@ async def get_students_in_faculty(head_id : Annotated[int, Depends(get_head_id)]
 @router.get('/faculty/majors', dependencies=[Depends(is_head)])
 async def get_majors_in_faculty(head_id : Annotated[int, Depends(get_head_id)]):
     url = COURSE_URL + '/faculty/majors/' + str(head_id)
+    response = requests.get(url=url)
+    return response.json()
+
+@router.get('/statistics/{course_id}', dependencies=[Depends(is_teacher_or_head)])
+async def get_course_statistics(course_id : Annotated[int, Path(gt=0)]):
+    url = COURSE_URL + '/course/statistics/' + str(course_id)
     response = requests.get(url=url)
     return response.json()
